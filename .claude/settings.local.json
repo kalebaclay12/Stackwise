@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(npm run db:migrate:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(dir:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(curl:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Stackwise - Modern Banking App\n\nFeatures:\n- Complete banking system with checking and savings accounts\n- Stacks system for money organization \\(virtual envelopes\\)\n- Transaction history for accounts and stacks\n- Account and stack management \\(create, edit, delete\\)\n- Plaid integration for linking external bank accounts\n- JWT authentication with bcrypt password hashing\n- Full TypeScript implementation \\(frontend & backend\\)\n- React 18 with Vite and Tailwind CSS\n- Node.js/Express backend with Prisma ORM\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

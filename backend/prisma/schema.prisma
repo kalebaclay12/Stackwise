@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts      Account[]
+  linkedBanks   LinkedBank[]
+}
+
+model Account {
+  id               String   @id @default(uuid())
+  userId           String
+  type             String
+  name             String
+  balance          Float    @default(0)
+  availableBalance Float    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stacks       Stack[]
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+model Stack {
+  id                 String   @id @default(uuid())
+  accountId          String
+  name               String
+  description        String?
+  targetAmount       Float?
+  currentAmount      Float    @default(0)
+  color              String
+  icon               String
+  priority           Int
+  isActive           Boolean  @default(true)
+  autoAllocate       Boolean  @default(false)
+  autoAllocateAmount Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([accountId])
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  accountId   String
+  stackId     String?
+  type        String
+  amount      Float
+  description String
+  category    String?
+  date        DateTime @default(now())
+  balance     Float
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  stack   Stack?  @relation(fields: [stackId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+  @@index([stackId])
+  @@index([date])
+}
+
+model LinkedBank {
+  id                String   @id @default(uuid())
+  userId            String
+  plaidItemId       String
+  plaidAccessToken  String
+  institutionId     String
+  institutionName   String
+  accountId         String?
+  accountName       String?
+  accountMask       String?
+  accountType       String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([plaidItemId])
+}
