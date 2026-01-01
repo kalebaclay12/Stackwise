@@ -14,9 +14,18 @@ export const createLinkToken = async (req: AuthRequest, res: Response, next: Nex
       return res.status(404).json({ message: 'User not found' });
     }
 
+    console.log('Creating Plaid link token for user:', user.id);
+    console.log('Plaid environment:', process.env.PLAID_ENV);
+    console.log('Plaid client ID:', process.env.PLAID_CLIENT_ID);
+
     const response = await plaidClient.linkTokenCreate({
       user: {
         client_user_id: user.id,
+        email_address: user.email,
+        name: {
+          given_name: user.firstName,
+          family_name: user.lastName,
+        },
       },
       client_name: 'Stackwise Banking',
       products: [Products.Auth, Products.Transactions],
@@ -24,9 +33,11 @@ export const createLinkToken = async (req: AuthRequest, res: Response, next: Nex
       language: 'en',
     });
 
+    console.log('Link token created successfully');
     res.json({ link_token: response.data.link_token });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating link token:', error);
+    console.error('Error response:', error.response?.data);
     next(error);
   }
 };
@@ -35,11 +46,14 @@ export const exchangePublicToken = async (req: AuthRequest, res: Response, next:
   try {
     const { public_token } = req.body;
 
+    console.log('Exchanging public token...');
+
     const tokenResponse = await plaidClient.itemPublicTokenExchange({
       public_token,
     });
 
     const { access_token, item_id } = tokenResponse.data;
+    console.log('Token exchanged successfully, item_id:', item_id);
 
     const institutionResponse = await plaidClient.itemGet({
       access_token,
@@ -50,11 +64,14 @@ export const exchangePublicToken = async (req: AuthRequest, res: Response, next:
       country_codes: [CountryCode.Us],
     });
 
+    console.log('Institution:', institution.data.institution.name);
+
     const accountsResponse = await plaidClient.accountsGet({
       access_token,
     });
 
     const account = accountsResponse.data.accounts[0];
+    console.log('Account retrieved:', account?.name);
 
     const linkedBank = await prisma.linkedBank.create({
       data: {
@@ -71,6 +88,8 @@ export const exchangePublicToken = async (req: AuthRequest, res: Response, next:
       },
     });
 
+    console.log('Bank linked successfully:', linkedBank.id);
+
     res.json({
       linkedBank: {
         id: linkedBank.id,
@@ -79,8 +98,9 @@ export const exchangePublicToken = async (req: AuthRequest, res: Response, next:
         accountMask: linkedBank.accountMask,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error exchanging public token:', error);
+    console.error('Error response:', error.response?.data);
     next(error);
   }
 };

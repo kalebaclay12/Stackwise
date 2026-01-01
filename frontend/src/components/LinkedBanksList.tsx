@@ -14,9 +14,10 @@ interface LinkedBank {
 
 interface LinkedBanksListProps {
   onTransferClick?: (linkedBankId: string) => void;
+  refreshTrigger?: number;
 }
 
-export default function LinkedBanksList({ onTransferClick }: LinkedBanksListProps) {
+export default function LinkedBanksList({ onTransferClick, refreshTrigger }: LinkedBanksListProps) {
   const [linkedBanks, setLinkedBanks] = useState<LinkedBank[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,7 +35,7 @@ export default function LinkedBanksList({ onTransferClick }: LinkedBanksListProp
 
   useEffect(() => {
     fetchLinkedBanks();
-  }, []);
+  }, [refreshTrigger]);
 
   const handleUnlink = async (id: string, institutionName: string) => {
     if (!confirm(`Are you sure you want to unlink ${institutionName}?`)) return;

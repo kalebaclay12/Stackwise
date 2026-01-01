@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [showBankSection, setShowBankSection] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedLinkedBankId, setSelectedLinkedBankId] = useState<string | null>(null);
+  const [linkedBanksRefresh, setLinkedBanksRefresh] = useState(0);
 
   useEffect(() => {
     fetchAccounts();
@@ -96,9 +97,10 @@ export default function DashboardPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-900">Linked Bank Accounts</h2>
-              <BankLinkButton onSuccess={() => {}} />
+              <BankLinkButton onSuccess={() => setLinkedBanksRefresh(prev => prev + 1)} />
             </div>
             <LinkedBanksList
+              refreshTrigger={linkedBanksRefresh}
               onTransferClick={(linkedBankId) => {
                 setSelectedLinkedBankId(linkedBankId);
                 setShowTransferModal(true);
@@ -148,7 +150,7 @@ export default function DashboardPage() {
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedAccount.name} - Transaction History
+                  {selectedAccount.name}
                 </h2>
                 <div className="flex gap-2">
                   <button
