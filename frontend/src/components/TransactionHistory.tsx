@@ -47,21 +47,42 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
   const getTransactionIcon = (type: string, amount: number) => {
     if (type === 'allocation') {
       return amount > 0 ? (
-        <ArrowUpCircle className="w-5 h-5 text-green-600" />
+        <ArrowUpCircle className="w-5 h-5 text-white" />
       ) : (
-        <ArrowDownCircle className="w-5 h-5 text-blue-600" />
+        <ArrowDownCircle className="w-5 h-5 text-white" />
       );
     }
     if (type === 'deposit') {
-      return <ArrowUpCircle className="w-5 h-5 text-green-600" />;
+      return <ArrowUpCircle className="w-5 h-5 text-white" />;
     }
     if (type === 'withdrawal') {
-      return <ArrowDownCircle className="w-5 h-5 text-red-600" />;
+      return <ArrowDownCircle className="w-5 h-5 text-white" />;
     }
     if (type === 'transfer') {
-      return <ArrowLeftRight className="w-5 h-5 text-blue-600" />;
+      return <ArrowLeftRight className="w-5 h-5 text-white" />;
     }
-    return <Layers className="w-5 h-5 text-gray-600" />;
+    return <Layers className="w-5 h-5 text-white" />;
+  };
+
+  const getIconBgColor = (type: string, amount: number) => {
+    if (type === 'allocation') {
+      return amount > 0 ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-blue-500 to-blue-600';
+    }
+    if (type === 'deposit') return 'bg-gradient-to-br from-green-500 to-emerald-600';
+    if (type === 'withdrawal') return 'bg-gradient-to-br from-red-500 to-red-600';
+    if (type === 'transfer') return 'bg-gradient-to-br from-blue-500 to-blue-600';
+    return 'bg-gradient-to-br from-gray-500 to-gray-600';
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      'Bank Transfer': 'bg-blue-100 text-blue-700',
+      'Deposit': 'bg-green-100 text-green-700',
+      'Withdrawal': 'bg-red-100 text-red-700',
+      'Transfer': 'bg-purple-100 text-purple-700',
+      'Stack Allocation': 'bg-orange-100 text-orange-700',
+    };
+    return colors[category] || 'bg-gray-100 text-gray-700';
   };
 
   const getAmountColor = (type: string, amount: number) => {
@@ -91,38 +112,40 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
 
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold mb-4">{title || 'Transaction History'}</h3>
-      <div className="space-y-3">
+      {title && <h3 className="text-lg font-semibold mb-4">{title}</h3>}
+      <div className="space-y-2">
         {transactions.map((transaction) => (
           <div
             key={transaction.id}
-            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl hover:shadow-md hover:border-gray-200 transition-all duration-200"
           >
-            <div className="flex items-center gap-3 flex-1">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+            <div className="flex items-center gap-4 flex-1">
+              <div className={`w-11 h-11 ${getIconBgColor(transaction.type, transaction.amount)} rounded-xl flex items-center justify-center shadow-sm`}>
                 {getTransactionIcon(transaction.type, transaction.amount)}
               </div>
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">{transaction.description}</p>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span>{format(new Date(transaction.date), 'MMM d, yyyy')}</span>
-                  <span>•</span>
-                  <span>{format(new Date(transaction.date), 'h:mm a')}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 truncate">{transaction.description}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-gray-500">{format(new Date(transaction.date), 'MMM d, yyyy')}</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-sm text-gray-500">{format(new Date(transaction.date), 'h:mm a')}</span>
                   {transaction.category && (
                     <>
-                      <span>•</span>
-                      <span className="text-primary-600">{transaction.category}</span>
+                      <span className="text-gray-300">•</span>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryColor(transaction.category)}`}>
+                        {transaction.category}
+                      </span>
                     </>
                   )}
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className={`text-lg font-semibold ${getAmountColor(transaction.type, transaction.amount)}`}>
+            <div className="text-right ml-4">
+              <p className={`text-lg font-bold ${getAmountColor(transaction.type, transaction.amount)}`}>
                 {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
               </p>
-              <p className="text-xs text-gray-500">
-                Balance: {formatCurrency(transaction.balance)}
+              <p className="text-xs text-gray-400 mt-1">
+                Bal: {formatCurrency(transaction.balance)}
               </p>
             </div>
           </div>

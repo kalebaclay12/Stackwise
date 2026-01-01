@@ -65,10 +65,10 @@ export default function LinkedBanksList({ onTransferClick, refreshTrigger }: Lin
   return (
     <div className="space-y-3">
       {linkedBanks.map((bank) => (
-        <div key={bank.id} className="card flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-primary-600" />
+        <div key={bank.id} className="bg-white border border-gray-100 rounded-xl p-5 flex items-center justify-between hover:shadow-md hover:border-gray-200 transition-all duration-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-sm">
+              <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">{bank.institutionName}</h3>
@@ -76,7 +76,9 @@ export default function LinkedBanksList({ onTransferClick, refreshTrigger }: Lin
                 {bank.accountName} {bank.accountMask && `(...${bank.accountMask})`}
               </p>
               {bank.accountType && (
-                <p className="text-xs text-gray-500 capitalize">{bank.accountType}</p>
+                <span className="inline-block mt-1 text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full font-medium capitalize">
+                  {bank.accountType}
+                </span>
               )}
             </div>
           </div>
@@ -92,7 +94,7 @@ export default function LinkedBanksList({ onTransferClick, refreshTrigger }: Lin
             )}
             <button
               onClick={() => handleUnlink(bank.id, bank.institutionName)}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
               title="Unlink bank"
             >
               <Trash2 className="w-4 h-4" />

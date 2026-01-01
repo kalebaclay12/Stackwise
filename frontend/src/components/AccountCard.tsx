@@ -15,43 +15,48 @@ export default function AccountCard({ account, isSelected, onClick }: AccountCar
     }).format(amount);
   };
 
+  const gradientClass = account.type === 'checking'
+    ? 'bg-gradient-to-br from-blue-500 to-blue-600'
+    : 'bg-gradient-to-br from-green-500 to-emerald-600';
+
   return (
     <button
       onClick={onClick}
-      className={`card text-left transition-all hover:shadow-md ${
-        isSelected ? 'ring-2 ring-primary-500' : ''
+      className={`relative overflow-hidden text-left transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl ${
+        isSelected ? 'ring-2 ring-primary-500 shadow-lg' : 'shadow-sm'
       }`}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-            account.type === 'checking' ? 'bg-blue-100' : 'bg-green-100'
-          }`}>
-            {account.type === 'checking' ? (
-              <Wallet className="w-6 h-6 text-blue-600" />
-            ) : (
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            )}
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">{account.name}</h3>
-            <p className="text-sm text-gray-500 capitalize">{account.type}</p>
+      {/* Gradient Background */}
+      <div className={`${gradientClass} p-6 text-white`}>
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              {account.type === 'checking' ? (
+                <Wallet className="w-6 h-6 text-white" />
+              ) : (
+                <TrendingUp className="w-6 h-6 text-white" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">{account.name}</h3>
+              <p className="text-sm text-white/80 capitalize">{account.type}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <div>
-          <p className="text-sm text-gray-600">Total Balance</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatCurrency(account.balance)}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-600">Available</p>
-          <p className="text-lg font-semibold text-primary-600">
-            {formatCurrency(account.availableBalance)}
-          </p>
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm text-white/80">Total Balance</p>
+            <p className="text-3xl font-bold text-white">
+              {formatCurrency(account.balance)}
+            </p>
+          </div>
+          <div className="pt-3 border-t border-white/20">
+            <p className="text-sm text-white/80">Available</p>
+            <p className="text-xl font-semibold text-white">
+              {formatCurrency(account.availableBalance)}
+            </p>
+          </div>
         </div>
       </div>
     </button>
