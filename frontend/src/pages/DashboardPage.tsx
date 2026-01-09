@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useAccountStore } from '../store/accountStore';
-import { LogOut, Plus, Building2, Edit3, Trash2 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { LogOut, Plus, Building2, RefreshCw, Edit3, Trash2, ChevronDown, User, Sun, Moon, Settings, Scan, Upload } from 'lucide-react';
 import AccountCard from '../components/AccountCard';
 import StackList from '../components/StackList';
 import CreateStackModal from '../components/CreateStackModal';
@@ -11,11 +13,17 @@ import BankLinkButton from '../components/BankLinkButton';
 import LinkedBanksList from '../components/LinkedBanksList';
 import TransferFromBankModal from '../components/TransferFromBankModal';
 import TransactionHistory from '../components/TransactionHistory';
-import { accountAPI } from '../services/api';
+import PendingMatchModal from '../components/PendingMatchModal';
+import NotificationBell from '../components/NotificationBell';
+import ImportCSVModal from '../components/ImportCSVModal';
+import axios from '../services/api';
+import { accountAPI, transactionMatcherAPI } from '../services/api';
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { accounts, selectedAccount, selectAccount, fetchAccounts } = useAccountStore();
+  const { accounts, selectedAccount, selectAccount, fetchAccounts, refreshCurrentAccount } = useAccountStore();
+  const { theme, toggleTheme } = useTheme();
   const [showCreateStack, setShowCreateStack] = useState(false);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showEditAccount, setShowEditAccount] = useState(false);
@@ -23,6 +31,11 @@ export default function DashboardPage() {
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedLinkedBankId, setSelectedLinkedBankId] = useState<string | null>(null);
   const [linkedBanksRefresh, setLinkedBanksRefresh] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+  const [showPendingMatches, setShowPendingMatches] = useState(false);
+  const [pendingMatchesCount, setPendingMatchesCount] = useState(0);
+  const [showImportCSV, setShowImportCSV] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
@@ -34,8 +47,45 @@ export default function DashboardPage() {
     }
   }, [accounts, selectedAccount, selectAccount]);
 
+  // Check for pending matches when account is selected
+  useEffect(() => {
+    const checkPendingMatches = async () => {
+      if (!selectedAccount) return;
+
+      try {
+        const response = await transactionMatcherAPI.getPendingMatches(selectedAccount.id);
+        setPendingMatchesCount(response.data?.length || 0);
+      } catch (error) {
+        console.error('Error checking pending matches:', error);
+        setPendingMatchesCount(0);
+      }
+    };
+
+    checkPendingMatches();
+  }, [selectedAccount]);
+
+  const handleSyncAccount = async (linkedBankId: string) => {
+    if (!selectedAccount?.linkedBankId) return;
+
+    setIsSyncing(true);
+    try {
+      await axios.post(`/plaid/sync/${linkedBankId}`);
+      await refreshCurrentAccount();
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to sync account');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (!selectedAccount) return;
+
+    // Don't allow deleting linked accounts
+    if (selectedAccount.linkedBankId) {
+      alert('Cannot delete a bank-linked account. Please unlink the bank first.');
+      return;
+    }
 
     if (!confirm(`Are you sure you want to delete ${selectedAccount.name}? This action cannot be undone.`)) {
       return;
@@ -50,9 +100,25 @@ export default function DashboardPage() {
     }
   };
 
+  const handleViewPendingMatches = () => {
+    setShowPendingMatches(true);
+  };
+
+  const handleClosePendingMatches = () => {
+    setShowPendingMatches(false);
+    // Refresh the count after closing
+    if (selectedAccount) {
+      transactionMatcherAPI.scanForMatches(selectedAccount.id).then((response) => {
+        setPendingMatchesCount(response.data.suggestionsCreated || 0);
+      }).catch(() => {
+        setPendingMatchesCount(0);
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
+      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
@@ -60,33 +126,108 @@ export default function DashboardPage() {
                 <span className="text-white font-bold text-lg">S</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Stackwise</h1>
-                <p className="text-xs text-gray-500">Modern Banking</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Stackwise</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Modern Banking</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setShowBankSection(!showBankSection)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-                  showBankSection ? 'bg-primary-100 text-primary-700' : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
               >
-                <Building2 className="w-5 h-5" />
-                <span className="text-sm font-medium">Linked Banks</span>
+                {theme === 'light' ? (
+                  <Moon className="w-5 h-5" />
+                ) : (
+                  <Sun className="w-5 h-5" />
+                )}
               </button>
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
-                  {user?.firstName} {user?.lastName}
-                </p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+
+              <NotificationBell />
+
+              <div className="relative">
+                <button
+                  onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform ${showSettingsDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showSettingsDropdown && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowSettingsDropdown(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-20">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                      </div>
+
+                      <div className="py-2">
+                        <button
+                          onClick={() => {
+                            setShowSettingsDropdown(false);
+                            navigate('/settings');
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-gray-700 dark:text-gray-300"
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span>Settings</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setShowSettingsDropdown(false);
+                            setShowBankSection(!showBankSection);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-gray-700 dark:text-gray-300"
+                        >
+                          <Building2 className="w-4 h-4" />
+                          <span>Linked Banks</span>
+                        </button>
+
+                        {selectedAccount?.linkedBankId && (
+                          <button
+                            onClick={() => {
+                              setShowSettingsDropdown(false);
+                              handleSyncAccount(selectedAccount.linkedBankId!);
+                            }}
+                            disabled={isSyncing}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                          >
+                            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                            <span>{isSyncing ? 'Syncing...' : 'Sync Account Balance'}</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => {
+                            setShowSettingsDropdown(false);
+                            logout();
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-red-600 dark:text-red-400"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-              <button
-                onClick={logout}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
             </div>
           </div>
         </div>
@@ -96,8 +237,11 @@ export default function DashboardPage() {
         {showBankSection && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Linked Bank Accounts</h2>
-              <BankLinkButton onSuccess={() => setLinkedBanksRefresh(prev => prev + 1)} />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Linked Bank Accounts</h2>
+              <BankLinkButton onSuccess={() => {
+                setLinkedBanksRefresh(prev => prev + 1);
+                refreshCurrentAccount();
+              }} />
             </div>
             <LinkedBanksList
               refreshTrigger={linkedBanksRefresh}
@@ -111,25 +255,38 @@ export default function DashboardPage() {
 
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Accounts</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Accounts</h2>
             <button
               onClick={() => setShowCreateAccount(true)}
-              className="btn-primary flex items-center gap-2"
+              className="btn-secondary flex items-center gap-2"
+              title="Create a local test account"
             >
               <Plus className="w-4 h-4" />
-              Add Account
+              Add Local Account
             </button>
           </div>
 
           {accounts.length === 0 ? (
             <div className="card text-center py-12">
-              <p className="text-gray-600 mb-4">No accounts yet</p>
-              <button
-                onClick={() => setShowCreateAccount(true)}
-                className="btn-primary"
-              >
-                Create your first account
-              </button>
+              <Building2 className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+              <p className="text-gray-600 dark:text-gray-300 mb-2 font-semibold">No accounts yet</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Link a bank account or create a local test account to get started.</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowBankSection(true)}
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  <Building2 className="w-4 h-4" />
+                  Link Bank Account
+                </button>
+                <button
+                  onClick={() => setShowCreateAccount(true)}
+                  className="btn-secondary inline-flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Local Account
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -149,24 +306,47 @@ export default function DashboardPage() {
           <>
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {selectedAccount.name}
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {selectedAccount.name}
+                  </h2>
+                </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowEditAccount(true)}
-                    className="btn-secondary flex items-center gap-2"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    Edit Account
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Account
-                  </button>
+                  {selectedAccount.linkedBankId ? (
+                    <button
+                      onClick={() => handleSyncAccount(selectedAccount.linkedBankId!)}
+                      disabled={isSyncing}
+                      className="btn-primary flex items-center gap-2"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                      {isSyncing ? 'Syncing...' : 'Sync Balance'}
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setShowImportCSV(true)}
+                        className="btn-secondary flex items-center gap-2"
+                        title="Import transactions from CSV"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Import CSV
+                      </button>
+                      <button
+                        onClick={() => setShowEditAccount(true)}
+                        className="btn-secondary flex items-center gap-2"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={handleDeleteAccount}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <TransactionHistory
@@ -177,16 +357,31 @@ export default function DashboardPage() {
 
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Stacks in {selectedAccount.name}
                 </h2>
-                <button
-                  onClick={() => setShowCreateStack(true)}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create Stack
-                </button>
+                <div className="flex items-center gap-2">
+                  {pendingMatchesCount > 0 && (
+                    <button
+                      onClick={handleViewPendingMatches}
+                      className="btn-secondary flex items-center gap-2 relative"
+                      title={`Review ${pendingMatchesCount} pending transaction match${pendingMatchesCount !== 1 ? 'es' : ''}`}
+                    >
+                      <Scan className="w-4 h-4" />
+                      Review Matches
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
+                        {pendingMatchesCount}
+                      </span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowCreateStack(true)}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Stack
+                  </button>
+                </div>
               </div>
               <StackList accountId={selectedAccount.id} />
             </div>
@@ -210,7 +405,7 @@ export default function DashboardPage() {
           account={selectedAccount}
           onClose={() => setShowEditAccount(false)}
           onSuccess={() => {
-            fetchAccounts();
+            refreshCurrentAccount();
           }}
         />
       )}
@@ -223,7 +418,29 @@ export default function DashboardPage() {
             setSelectedLinkedBankId(null);
           }}
           onSuccess={() => {
-            fetchAccounts();
+            refreshCurrentAccount();
+            setLinkedBanksRefresh(prev => prev + 1);
+          }}
+        />
+      )}
+
+      {showPendingMatches && selectedAccount && (
+        <PendingMatchModal
+          accountId={selectedAccount.id}
+          onClose={handleClosePendingMatches}
+          onMatchesProcessed={() => {
+            refreshCurrentAccount();
+          }}
+        />
+      )}
+
+      {showImportCSV && selectedAccount && (
+        <ImportCSVModal
+          accountId={selectedAccount.id}
+          isOpen={showImportCSV}
+          onClose={() => {
+            setShowImportCSV(false);
+            refreshCurrentAccount();
           }}
         />
       )}

@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { accountAPI, stackAPI } from '../services/api';
 import type { Account, Stack } from '../types';
 
+interface ParsedTransaction {
+  date: string;
+  description: string;
+  amount: number;
+  category?: string;
+}
+
 interface AccountState {
   accounts: Account[];
   stacks: Record<string, Stack[]>;
@@ -11,12 +18,15 @@ interface AccountState {
   fetchAccounts: () => Promise<void>;
   fetchStacks: (accountId: string) => Promise<void>;
   selectAccount: (account: Account | null) => void;
-  createAccount: (data: { type: 'checking' | 'savings'; name: string }) => Promise<void>;
+  refreshCurrentAccount: () => Promise<void>;
+  createAccount: (data: { type: 'checking' | 'savings'; name: string; color?: string }) => Promise<void>;
   createStack: (accountId: string, data: Partial<Stack>) => Promise<void>;
   updateStack: (stackId: string, data: Partial<Stack>) => Promise<void>;
+  updateStackPriorities: (accountId: string, priorities: { id: string; priority: number }[]) => Promise<void>;
   deleteStack: (stackId: string) => Promise<void>;
   allocateToStack: (stackId: string, amount: number) => Promise<void>;
   deallocateFromStack: (stackId: string, amount: number) => Promise<void>;
+  importCSVTransactions: (accountId: string, transactions: ParsedTransaction[]) => Promise<void>;
 }
 
 export const useAccountStore = create<AccountState>((set, get) => ({
@@ -57,6 +67,23 @@ export const useAccountStore = create<AccountState>((set, get) => ({
     }
   },
 
+  refreshCurrentAccount: async () => {
+    const selectedAccountId = get().selectedAccount?.id;
+    if (!selectedAccountId) return;
+
+    // Fetch updated accounts data
+    await get().fetchAccounts();
+
+    // Update the selected account with fresh data
+    const updatedAccount = get().accounts.find(acc => acc.id === selectedAccountId);
+    if (updatedAccount) {
+      set({ selectedAccount: updatedAccount });
+    }
+
+    // Refresh stacks for the current account
+    await get().fetchStacks(selectedAccountId);
+  },
+
   createAccount: async (data) => {
     set({ isLoading: true, error: null });
     try {
@@ -83,7 +110,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
           [accountId]: [...(state.stacks[accountId] || []), response.data]
         }
       }));
-      await get().fetchAccounts();
+      await get().refreshCurrentAccount();
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to create stack' });
       throw error;
@@ -102,8 +129,30 @@ export const useAccountStore = create<AccountState>((set, get) => ({
           ])
         )
       }));
+      await get().refreshCurrentAccount();
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to update stack' });
+      throw error;
+    }
+  },
+
+  updateStackPriorities: async (accountId: string, priorities: { id: string; priority: number }[]) => {
+    try {
+      await stackAPI.updatePriorities(accountId, priorities);
+      // Optimistically update the local state
+      set((state) => ({
+        stacks: {
+          ...state.stacks,
+          [accountId]: (state.stacks[accountId] || []).map(stack => {
+            const priorityUpdate = priorities.find(p => p.id === stack.id);
+            return priorityUpdate ? { ...stack, priority: priorityUpdate.priority } : stack;
+          })
+        }
+      }));
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Failed to update priorities' });
+      // Refetch to restore correct order if update failed
+      await get().fetchStacks(accountId);
       throw error;
     }
   },
@@ -119,7 +168,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
           ])
         )
       }));
-      await get().fetchAccounts();
+      await get().refreshCurrentAccount();
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to delete stack' });
       throw error;
@@ -129,10 +178,15 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   allocateToStack: async (stackId: string, amount: number) => {
     try {
       await stackAPI.allocate(stackId, amount);
+      const selectedAccountId = get().selectedAccount?.id;
       await get().fetchAccounts();
-      const selectedAccount = get().selectedAccount;
-      if (selectedAccount) {
-        await get().fetchStacks(selectedAccount.id);
+      if (selectedAccountId) {
+        // Update selectedAccount with the newly fetched data
+        const updatedAccount = get().accounts.find(acc => acc.id === selectedAccountId);
+        if (updatedAccount) {
+          set({ selectedAccount: updatedAccount });
+        }
+        await get().fetchStacks(selectedAccountId);
       }
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to allocate funds' });
@@ -143,13 +197,34 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   deallocateFromStack: async (stackId: string, amount: number) => {
     try {
       await stackAPI.deallocate(stackId, amount);
+      const selectedAccountId = get().selectedAccount?.id;
       await get().fetchAccounts();
-      const selectedAccount = get().selectedAccount;
-      if (selectedAccount) {
-        await get().fetchStacks(selectedAccount.id);
+      if (selectedAccountId) {
+        // Update selectedAccount with the newly fetched data
+        const updatedAccount = get().accounts.find(acc => acc.id === selectedAccountId);
+        if (updatedAccount) {
+          set({ selectedAccount: updatedAccount });
+        }
+        await get().fetchStacks(selectedAccountId);
       }
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to deallocate funds' });
+      throw error;
+    }
+  },
+
+  importCSVTransactions: async (accountId: string, transactions: ParsedTransaction[]) => {
+    try {
+      await accountAPI.importCSV(accountId, transactions);
+      // Refresh account and stacks after import
+      await get().fetchAccounts();
+      const updatedAccount = get().accounts.find(acc => acc.id === accountId);
+      if (updatedAccount) {
+        set({ selectedAccount: updatedAccount });
+      }
+      await get().fetchStacks(accountId);
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Failed to import CSV transactions' });
       throw error;
     }
   },

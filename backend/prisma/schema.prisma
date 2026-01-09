@@ -8,95 +8,171 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  firstName String
-  lastName  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String    @id @default(uuid())
+  email                 String    @unique
+  password              String
+  firstName             String
+  lastName              String
+  subscriptionTier      String    @default("free")  // free, pro
+  subscriptionStatus    String    @default("active")  // active, cancelled, past_due, expired
+  subscriptionId        String?   // Stripe subscription ID
+  customerId            String?   // Stripe customer ID
+  subscriptionExpiresAt DateTime?  // When subscription ends (for cancelled subs)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   accounts      Account[]
   linkedBanks   LinkedBank[]
+  preferences   UserPreferences?
+  notifications Notification[]
+}
+
+model UserPreferences {
+  id                          String   @id @default(uuid())
+  userId                      String   @unique
+  currencyCode                String   @default("USD")  // USD, EUR, GBP, etc.
+  currencySymbol              String   @default("$")
+  dateFormat                  String   @default("MM/DD/YYYY")  // MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD
+  timeFormat                  String   @default("12h")  // 12h, 24h
+  itemsPerPage                Int      @default(10)
+  defaultAccountId            String?
+  emailNotifications          Boolean  @default(true)
+  negativeBalanceBehavior     String   @default("auto_deallocate")  // auto_deallocate, allow_negative, notify_only
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Account {
   id               String   @id @default(uuid())
   userId           String
+  linkedBankId     String?  // Link to actual bank account via Plaid
   type             String
   name             String
-  balance          Float    @default(0)
-  availableBalance Float    @default(0)
+  balance          Float    @default(0)  // Synced from Plaid
+  availableBalance Float    @default(0)  // balance - allocated to stacks
+  color            String?  // Custom gradient color for the card
+  lastSyncedAt     DateTime?  // Track last Plaid sync
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedBank   LinkedBank?   @relation(fields: [linkedBankId], references: [id], onDelete: SetNull)
   stacks       Stack[]
   transactions Transaction[]
 
   @@index([userId])
+  @@index([linkedBankId])
 }
 
 model Stack {
-  id                 String   @id @default(uuid())
-  accountId          String
-  name               String
-  description        String?
-  targetAmount       Float?
-  currentAmount      Float    @default(0)
-  color              String
-  icon               String
-  priority           Int
-  isActive           Boolean  @default(true)
-  autoAllocate       Boolean  @default(false)
-  autoAllocateAmount Float?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                     String   @id @default(uuid())
+  accountId              String
+  name                   String
+  description            String?
+  targetAmount           Float?
+  currentAmount          Float    @default(0)
+  targetDueDate          DateTime?  // When the target amount is needed by
+  color                  String
+  icon                   String
+  priority               Int
+  isActive               Boolean  @default(true)
+  autoAllocate           Boolean  @default(false)
+  autoAllocateAmount     Float?
+  autoAllocateFrequency  String?  // daily, every_other_day, weekly, bi_weekly, bi_monthly, monthly, semi_annually, annually
+  autoAllocateStartDate  DateTime?  // When to start auto-allocating
+  autoAllocateNextDate   DateTime?  // Next scheduled allocation date
+  resetBehavior          String   @default("none")  // none, auto_reset, ask_reset, delete
+  recurringPeriod        String?  // none, weekly, bi_weekly, bi_monthly, monthly, quarterly, semi_annually, annually
+  isCompleted            Boolean  @default(false)  // Track if stack has reached target
+  completedAt            DateTime?  // When stack completed
+  pendingReset           Boolean  @default(false)  // User needs to confirm reset
+  overflowBehavior       String   @default("next_priority")  // next_priority, available_balance, keep_in_stack
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   @@index([accountId])
+  @@index([autoAllocateNextDate])
+  @@index([isCompleted])
+  @@index([pendingReset])
 }
 
 model Transaction {
-  id          String   @id @default(uuid())
-  accountId   String
-  stackId     String?
-  type        String
-  amount      Float
-  description String
-  category    String?
-  date        DateTime @default(now())
-  balance     Float
-  metadata    String?
-  createdAt   DateTime @default(now())
+  id                    String   @id @default(uuid())
+  accountId             String
+  stackId               String?
+  plaidTransactionId    String?  @unique // Track real transactions from Plaid - UNIQUE to prevent duplicates
+  type                  String
+  amount                Float
+  description           String
+  category              String?
+  date                  DateTime @default(now())
+  balance               Float
+  metadata              String?
+  isVirtual             Boolean  @default(false)  // true for stack allocations, false for real bank transactions
+  suggestedStackId      String?  // AI-suggested stack match
+  matchConfirmed        Boolean  @default(false)  // User confirmed the match
+  matchRejected         Boolean  @default(false)  // User rejected the suggestion
+  matchConfidenceScore  Float?   // 0-1 confidence score for the match
+  createdAt             DateTime @default(now())
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  stack   Stack?  @relation(fields: [stackId], references: [id], onDelete: SetNull)
+  account        Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  stack          Stack?  @relation(fields: [stackId], references: [id], onDelete: SetNull)
 
   @@index([accountId])
   @@index([stackId])
   @@index([date])
+  @@index([plaidTransactionId])
+  @@index([suggestedStackId])
+  @@index([matchConfirmed])
+  @@index([isVirtual])
 }
 
 model LinkedBank {
-  id                String   @id @default(uuid())
-  userId            String
-  plaidItemId       String
-  plaidAccessToken  String
-  institutionId     String
-  institutionName   String
-  accountId         String?
-  accountName       String?
-  accountMask       String?
-  accountType       String?
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  userId              String
+  plaidItemId         String
+  plaidAccessToken    String
+  plaidAccountId      String?  // Plaid's account ID
+  institutionId       String
+  institutionName     String
+  accountName         String?
+  accountMask         String?
+  accountType         String?
+  currentBalance      Float?   // Current balance from Plaid
+  availableBalance    Float?   // Available balance from Plaid
+  isActive            Boolean  @default(true)
+  lastSyncedAt        DateTime?  // Last time we synced from Plaid
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accounts Account[]  // Linked to Stackwise accounts
+
+  @@index([userId])
+  @@index([plaidItemId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // stack_completed, stack_due_soon, bank_synced, transaction_matched, etc.
+  title     String
+  message   String
+  data      String?  // JSON data for additional context
+  read      Boolean  @default(false)
+  actionUrl String?  // Optional URL to navigate to when clicked
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([plaidItemId])
+  @@index([read])
+  @@index([createdAt])
 }

@@ -1,6 +1,9 @@
-import { X, Target, TrendingUp } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { X, ArrowUpCircle, ArrowDownCircle, TrendingUp, Calendar } from 'lucide-react';
 import { Stack } from '../types';
 import TransactionHistory from './TransactionHistory';
+import AllocateModal from './AllocateModal';
+import { calculatePaymentAmount, formatDaysUntilDue } from '../utils/paymentCalculator';
 
 interface StackDetailModalProps {
   stack: Stack;
@@ -8,6 +11,9 @@ interface StackDetailModalProps {
 }
 
 export default function StackDetailModal({ stack, onClose }: StackDetailModalProps) {
+  const [showAllocate, setShowAllocate] = useState(false);
+  const [showDeallocate, setShowDeallocate] = useState(false);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -15,97 +21,219 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
     }).format(amount);
   };
 
+  // Calculate payment amounts for bi-weekly payments if due date is set
+  const paymentCalculation = useMemo(() => {
+    if (!stack.targetAmount || !stack.targetDueDate) return null;
+
+    return calculatePaymentAmount(
+      stack.targetAmount,
+      stack.currentAmount,
+      new Date(stack.targetDueDate),
+      'bi_weekly' // Default to bi-weekly for display
+    );
+  }, [stack.targetAmount, stack.currentAmount, stack.targetDueDate]);
+
+  const formatNextAllocationDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+
+    const diffTime = targetDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return 'Overdue';
+    } else if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Tomorrow';
+    } else if (diffDays < 7) {
+      return `in ${diffDays} days`;
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  };
+
+  const getFrequencyLabel = (frequency?: string) => {
+    switch (frequency) {
+      case 'daily': return 'Daily';
+      case 'every_other_day': return 'Every Other Day';
+      case 'weekly': return 'Weekly';
+      case 'bi_weekly': return 'Bi-Weekly';
+      case 'monthly': return 'Monthly';
+      case 'semi_annually': return 'Semi-Annually';
+      case 'annually': return 'Annually';
+      default: return 'Unknown';
+    }
+  };
+
   const progressPercent = stack.targetAmount
     ? Math.min((stack.currentAmount / stack.targetAmount) * 100, 100)
     : 0;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl max-w-3xl w-full p-6 my-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl"
-              style={{ backgroundColor: stack.color + '20' }}
-            >
-              {stack.icon}
+    <>
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full shadow-2xl my-8"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="border-b border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl shadow-sm"
+                  style={{ backgroundColor: stack.color + '20' }}
+                >
+                  {stack.icon}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{stack.name}</h2>
+                  {stack.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{stack.description}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
             </div>
-            <div>
-              <h2 className="text-2xl font-semibold">{stack.name}</h2>
-              {stack.description && (
-                <p className="text-gray-600">{stack.description}</p>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Balance Card */}
+            <div className="bg-gradient-to-br from-primary-500 to-primary-600 dark:from-primary-600 dark:to-primary-700 rounded-xl p-6 text-white shadow-lg">
+              <p className="text-sm opacity-90 mb-1">Current Balance</p>
+              <p className="text-4xl font-bold">
+                {formatCurrency(stack.currentAmount)}
+              </p>
+              {stack.targetAmount && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs opacity-90">Goal: {formatCurrency(stack.targetAmount)}</span>
+                    <span className="text-xs font-semibold">{progressPercent.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full bg-white transition-all duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  <p className="text-xs mt-2 opacity-90">
+                    {stack.currentAmount >= stack.targetAmount
+                      ? 'Goal reached!'
+                      : `${formatCurrency(stack.targetAmount - stack.currentAmount)} remaining`}
+                  </p>
+                </div>
               )}
             </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="card bg-gradient-to-br from-primary-50 to-primary-100">
-            <p className="text-sm text-primary-800 mb-1">Current Amount</p>
-            <p className="text-3xl font-bold text-primary-900">
-              {formatCurrency(stack.currentAmount)}
-            </p>
-          </div>
-
-          {stack.targetAmount && (
-            <div className="card bg-gradient-to-br from-green-50 to-green-100">
-              <p className="text-sm text-green-800 mb-1">Target Goal</p>
-              <p className="text-3xl font-bold text-green-900">
-                {formatCurrency(stack.targetAmount)}
-              </p>
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-green-700">Progress</span>
-                  <span className="text-xs font-medium text-green-900">
-                    {progressPercent.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="w-full bg-green-200 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full bg-green-600 transition-all"
-                    style={{ width: `${progressPercent}%` }}
-                  />
+            {/* Auto-Allocation Info */}
+            {stack.autoAllocate && stack.autoAllocateAmount && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 dark:text-white mb-1">Auto-Allocation Active</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      {formatCurrency(stack.autoAllocateAmount)} • {getFrequencyLabel(stack.autoAllocateFrequency)}
+                    </p>
+                    {stack.autoAllocateNextDate && (
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        Next allocation: {formatNextAllocationDate(stack.autoAllocateNextDate)}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {stack.autoAllocate && stack.autoAllocateAmount && (
-            <div className="card bg-gradient-to-br from-blue-50 to-blue-100">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="w-4 h-4 text-blue-800" />
-                <p className="text-sm text-blue-800">Auto-Allocation</p>
+            {/* Payment Calculator Info */}
+            {paymentCalculation && stack.targetDueDate && (
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 dark:text-white mb-1">Payment Plan</p>
+                    {paymentCalculation.isOverdue ? (
+                      <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                        Target date has passed
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          {formatDaysUntilDue(paymentCalculation.daysUntilDue)}
+                        </p>
+                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-1">
+                          {formatCurrency(paymentCalculation.amountPerPayment)} per bi-weekly payment
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          {paymentCalculation.paymentsRemaining} payment{paymentCalculation.paymentsRemaining !== 1 ? 's' : ''} remaining to reach your goal
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-              <p className="text-2xl font-bold text-blue-900">
-                {formatCurrency(stack.autoAllocateAmount)}
-              </p>
-              <p className="text-xs text-blue-700 mt-1">per payday</p>
-            </div>
-          )}
+            )}
 
-          {stack.targetAmount && (
-            <div className="card bg-gradient-to-br from-purple-50 to-purple-100">
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-purple-800" />
-                <p className="text-sm text-purple-800">Remaining</p>
-              </div>
-              <p className="text-2xl font-bold text-purple-900">
-                {formatCurrency(Math.max(0, stack.targetAmount - stack.currentAmount))}
-              </p>
-              <p className="text-xs text-purple-700 mt-1">
-                {stack.currentAmount >= stack.targetAmount ? 'Goal reached!' : 'to reach goal'}
-              </p>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAllocate(true)}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <ArrowUpCircle className="w-5 h-5" />
+                Add Money
+              </button>
+              <button
+                onClick={() => setShowDeallocate(true)}
+                disabled={stack.currentAmount === 0}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ArrowDownCircle className="w-5 h-5" />
+                Remove Money
+              </button>
             </div>
-          )}
-        </div>
 
-        <div className="mt-6">
-          <TransactionHistory stackId={stack.id} title={`${stack.name} Transactions`} />
+            {/* Transaction History */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Transaction History</h3>
+              <TransactionHistory stackId={stack.id} />
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {showAllocate && (
+        <AllocateModal
+          stack={stack}
+          mode="allocate"
+          onClose={() => setShowAllocate(false)}
+        />
+      )}
+
+      {showDeallocate && (
+        <AllocateModal
+          stack={stack}
+          mode="deallocate"
+          onClose={() => setShowDeallocate(false)}
+        />
+      )}
+    </>
   );
 }

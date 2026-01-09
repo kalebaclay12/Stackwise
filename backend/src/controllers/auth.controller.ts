@@ -18,12 +18,18 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // BETA MODE: Auto-upgrade all new users to Pro
+    // Set BETA_MODE=false in production to disable this
+    const isBetaMode = process.env.BETA_MODE !== 'false';
+
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         firstName,
         lastName,
+        subscriptionTier: isBetaMode ? 'pro' : 'free',
+        subscriptionStatus: 'active',
       },
     });
 
@@ -45,6 +51,8 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        subscriptionTier: user.subscriptionTier,
+        subscriptionStatus: user.subscriptionStatus,
         createdAt: user.createdAt,
       },
       token,
@@ -80,6 +88,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        subscriptionTier: user.subscriptionTier,
+        subscriptionStatus: user.subscriptionStatus,
         createdAt: user.createdAt,
       },
       token,
@@ -98,6 +108,9 @@ export const getProfile = async (req: AuthRequest, res: Response, next: NextFunc
         email: true,
         firstName: true,
         lastName: true,
+        subscriptionTier: true,
+        subscriptionStatus: true,
+        subscriptionExpiresAt: true,
         createdAt: true,
       },
     });

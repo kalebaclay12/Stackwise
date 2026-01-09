@@ -56,6 +56,14 @@ export const accountAPI = {
 
   delete: (id: string) =>
     api.delete(`/accounts/${id}`),
+
+  importCSV: (accountId: string, transactions: Array<{
+    date: string;
+    description: string;
+    amount: number;
+    category?: string;
+  }>) =>
+    api.post<{ message: string; imported: number }>(`/accounts/${accountId}/import-csv`, { transactions }),
 };
 
 export const stackAPI = {
@@ -68,6 +76,9 @@ export const stackAPI = {
   update: (stackId: string, data: Partial<Stack>) =>
     api.put<Stack>(`/stacks/${stackId}`, data),
 
+  updatePriorities: (accountId: string, priorities: { id: string; priority: number }[]) =>
+    api.put(`/accounts/${accountId}/stacks/priorities`, { priorities }),
+
   delete: (stackId: string) =>
     api.delete(`/stacks/${stackId}`),
 
@@ -76,6 +87,22 @@ export const stackAPI = {
 
   deallocate: (stackId: string, amount: number) =>
     api.post(`/stacks/${stackId}/deallocate`, { amount }),
+
+  reset: (stackId: string, params?: {
+    keepAmount?: boolean;
+    keepDueDate?: boolean;
+    newTargetAmount?: number;
+    newTargetDueDate?: Date;
+    newAutoAllocateAmount?: number;
+    newAutoAllocateFrequency?: string;
+  }) =>
+    api.post(`/stacks/${stackId}/reset`, params),
+
+  dismissReset: (stackId: string) =>
+    api.post(`/stacks/${stackId}/dismiss-reset`),
+
+  getPendingResets: () =>
+    api.get(`/stacks/pending-resets`),
 };
 
 export const transactionAPI = {
@@ -87,6 +114,60 @@ export const transactionAPI = {
 
   create: (accountId: string, data: Partial<Transaction>) =>
     api.post<Transaction>(`/accounts/${accountId}/transactions`, data),
+};
+
+export const transactionMatcherAPI = {
+  scanForMatches: (accountId: string) =>
+    api.post<{ message: string; suggestionsCreated: number }>(`/accounts/${accountId}/scan-matches`),
+
+  getPendingMatches: (accountId: string) =>
+    api.get<Array<{ transaction: Transaction; suggestedStack: Stack | null }>>(`/accounts/${accountId}/pending-matches`),
+
+  confirmMatch: (transactionId: string) =>
+    api.post<{ message: string }>(`/transactions/${transactionId}/confirm-match`),
+
+  rejectMatch: (transactionId: string) =>
+    api.post<{ message: string }>(`/transactions/${transactionId}/reject-match`),
+
+  unmatch: (transactionId: string) =>
+    api.post<{ message: string }>(`/transactions/${transactionId}/unmatch`),
+};
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: string;
+  read: boolean;
+  actionUrl?: string;
+  createdAt: string;
+}
+
+export const notificationAPI = {
+  getNotifications: (params?: { limit?: number; unreadOnly?: boolean }) =>
+    api.get<Notification[]>('/notifications', { params }),
+
+  getUnreadCount: () =>
+    api.get<{ count: number }>('/notifications/unread-count'),
+
+  markAsRead: (id: string) =>
+    api.put<{ message: string }>(`/notifications/${id}/read`),
+
+  markAllAsRead: () =>
+    api.put<{ message: string }>('/notifications/read-all'),
+
+  deleteNotification: (id: string) =>
+    api.delete<{ message: string }>(`/notifications/${id}`),
+};
+
+export const subscriptionAPI = {
+  createCheckoutSession: () =>
+    api.post<{ sessionId: string; url: string }>('/subscription/create-checkout-session'),
+
+  createPortalSession: () =>
+    api.post<{ url: string }>('/subscription/create-portal-session'),
 };
 
 export default api;

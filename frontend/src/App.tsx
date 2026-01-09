@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
+import { ThemeProvider } from './contexts/ThemeContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   const { isAuthenticated, loadUser } = useAuthStore();
@@ -13,8 +15,9 @@ function App() {
   }, [loadUser]);
 
   return (
-    <BrowserRouter>
-      <Routes>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />}
@@ -28,11 +31,16 @@ function App() {
           element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />}
         />
         <Route
+          path="/settings"
+          element={isAuthenticated ? <SettingsPage /> : <Navigate to="/login" />}
+        />
+        <Route
           path="/"
           element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} />}
         />
       </Routes>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

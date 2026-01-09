@@ -6,18 +6,39 @@ interface CreateAccountModalProps {
   onClose: () => void;
 }
 
+const CHECKING_GRADIENTS = [
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%)',
+  'linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)',
+  'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+  'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+  'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+];
+
+const SAVINGS_GRADIENTS = [
+  'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+  'linear-gradient(135deg, #34d399 0%, #059669 100%)',
+  'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)',
+  'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+  'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+  'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+];
+
 export default function CreateAccountModal({ onClose }: CreateAccountModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<'checking' | 'savings'>('checking');
+  const [color, setColor] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { createAccount } = useAccountStore();
+
+  const colorOptions = type === 'checking' ? CHECKING_GRADIENTS : SAVINGS_GRADIENTS;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await createAccount({ type, name });
+      await createAccount({ type, name, color: color || undefined });
       onClose();
     } catch (error) {
       console.error('Create account error:', error);
@@ -27,14 +48,23 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Create Account</h2>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl max-w-md w-full p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-semibold">Create Local Test Account</h2>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
             <X className="w-5 h-5" />
           </button>
         </div>
+        <p className="text-sm text-gray-500 mb-6">
+          This creates a local test account with editable balances. To link a real bank account, use the "Link Bank Account" feature.
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -84,6 +114,34 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
               placeholder={`e.g., My ${type === 'checking' ? 'Checking' : 'Savings'}`}
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Card Color (Optional)
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {colorOptions.map((gradient) => (
+                <button
+                  key={gradient}
+                  type="button"
+                  onClick={() => setColor(gradient)}
+                  className={`h-16 rounded-lg transition-all ${
+                    color === gradient ? 'ring-2 ring-gray-900 ring-offset-2 scale-105' : 'hover:scale-105'
+                  }`}
+                  style={{ background: gradient }}
+                />
+              ))}
+            </div>
+            {color && (
+              <button
+                type="button"
+                onClick={() => setColor('')}
+                className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+              >
+                Clear selection (use default)
+              </button>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">

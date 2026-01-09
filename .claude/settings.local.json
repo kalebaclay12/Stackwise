@@ -12,7 +12,29 @@
       "Bash(curl:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Stackwise - Modern Banking App\n\nFeatures:\n- Complete banking system with checking and savings accounts\n- Stacks system for money organization \\(virtual envelopes\\)\n- Transaction history for accounts and stacks\n- Account and stack management \\(create, edit, delete\\)\n- Plaid integration for linking external bank accounts\n- JWT authentication with bcrypt password hashing\n- Full TypeScript implementation \\(frontend & backend\\)\n- React 18 with Vite and Tailwind CSS\n- Node.js/Express backend with Prisma ORM\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Stackwise - Modern Banking App\n\nFeatures:\n- Complete banking system with checking and savings accounts\n- Stacks system for money organization \\(virtual envelopes\\)\n- Transaction history for accounts and stacks\n- Account and stack management \\(create, edit, delete\\)\n- Plaid integration for linking external bank accounts\n- JWT authentication with bcrypt password hashing\n- Full TypeScript implementation \\(frontend & backend\\)\n- React 18 with Vite and Tailwind CSS\n- Node.js/Express backend with Prisma ORM\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git config:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git archive:*)",
+      "Bash(git commit:*)",
+      "Bash(cat:*)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(xargs:*)",
+      "Bash(timeout /t 3)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(if exist node_modules.vite rmdir /s /q node_modules.vite)",
+      "Bash(npm run build:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(npx prisma studio --help:*)",
+      "Bash(npx tsx:*)",
+      "Bash(del srcutilspaymentCalculator.test.ts)",
+      "Bash(del srcutilspaymentCalculator.simple-test.ts)",
+      "Bash(npm start)"
     ]
   }
 }
