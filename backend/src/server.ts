@@ -36,7 +36,7 @@ app.use(cors());
 // Stripe webhook needs raw body, so we add it before express.json()
 app.use('/api/subscription/webhook', express.raw({ type: 'application/json' }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use('/api', limiter);
 
 app.use('/api/auth', authRoutes);
