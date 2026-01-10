@@ -20,6 +20,7 @@ import stackCompletionService from './services/stackCompletion.service';
 
 dotenv.config();
 
+// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
