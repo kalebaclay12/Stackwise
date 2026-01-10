@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "User" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
@@ -9,14 +9,16 @@ CREATE TABLE "User" (
     "subscriptionStatus" TEXT NOT NULL DEFAULT 'active',
     "subscriptionId" TEXT,
     "customerId" TEXT,
-    "subscriptionExpiresAt" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "subscriptionExpiresAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "UserPreferences" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "currencyCode" TEXT NOT NULL DEFAULT 'USD',
     "currencySymbol" TEXT NOT NULL DEFAULT '$',
@@ -26,83 +28,85 @@ CREATE TABLE "UserPreferences" (
     "defaultAccountId" TEXT,
     "emailNotifications" BOOLEAN NOT NULL DEFAULT true,
     "negativeBalanceBehavior" TEXT NOT NULL DEFAULT 'auto_deallocate',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "UserPreferences_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "UserPreferences_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Account" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "linkedBankId" TEXT,
     "type" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "balance" REAL NOT NULL DEFAULT 0,
-    "availableBalance" REAL NOT NULL DEFAULT 0,
+    "balance" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "availableBalance" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "color" TEXT,
-    "lastSyncedAt" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Account_linkedBankId_fkey" FOREIGN KEY ("linkedBankId") REFERENCES "LinkedBank" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "lastSyncedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Account_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Stack" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "accountId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "targetAmount" REAL,
-    "currentAmount" REAL NOT NULL DEFAULT 0,
-    "targetDueDate" DATETIME,
+    "targetAmount" DOUBLE PRECISION,
+    "currentAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "targetDueDate" TIMESTAMP(3),
     "color" TEXT NOT NULL,
     "icon" TEXT NOT NULL,
     "priority" INTEGER NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "autoAllocate" BOOLEAN NOT NULL DEFAULT false,
-    "autoAllocateAmount" REAL,
+    "autoAllocateAmount" DOUBLE PRECISION,
     "autoAllocateFrequency" TEXT,
-    "autoAllocateStartDate" DATETIME,
-    "autoAllocateNextDate" DATETIME,
+    "autoAllocateStartDate" TIMESTAMP(3),
+    "autoAllocateNextDate" TIMESTAMP(3),
     "resetBehavior" TEXT NOT NULL DEFAULT 'none',
     "recurringPeriod" TEXT,
     "isCompleted" BOOLEAN NOT NULL DEFAULT false,
-    "completedAt" DATETIME,
+    "completedAt" TIMESTAMP(3),
     "pendingReset" BOOLEAN NOT NULL DEFAULT false,
     "overflowBehavior" TEXT NOT NULL DEFAULT 'next_priority',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Stack_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Stack_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Transaction" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "accountId" TEXT NOT NULL,
     "stackId" TEXT,
     "plaidTransactionId" TEXT,
     "type" TEXT NOT NULL,
-    "amount" REAL NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
     "description" TEXT NOT NULL,
     "category" TEXT,
-    "date" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "balance" REAL NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "balance" DOUBLE PRECISION NOT NULL,
     "metadata" TEXT,
     "isVirtual" BOOLEAN NOT NULL DEFAULT false,
     "suggestedStackId" TEXT,
     "matchConfirmed" BOOLEAN NOT NULL DEFAULT false,
     "matchRejected" BOOLEAN NOT NULL DEFAULT false,
-    "matchConfidenceScore" REAL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Transaction_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_stackId_fkey" FOREIGN KEY ("stackId") REFERENCES "Stack" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "matchConfidenceScore" DOUBLE PRECISION,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "LinkedBank" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "plaidItemId" TEXT NOT NULL,
     "plaidAccessToken" TEXT NOT NULL,
@@ -112,18 +116,19 @@ CREATE TABLE "LinkedBank" (
     "accountName" TEXT,
     "accountMask" TEXT,
     "accountType" TEXT,
-    "currentBalance" REAL,
-    "availableBalance" REAL,
+    "currentBalance" DOUBLE PRECISION,
+    "availableBalance" DOUBLE PRECISION,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "lastSyncedAt" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "LinkedBank_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "lastSyncedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "LinkedBank_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Notification" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -131,8 +136,9 @@ CREATE TABLE "Notification" (
     "data" TEXT,
     "read" BOOLEAN NOT NULL DEFAULT false,
     "actionUrl" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -201,3 +207,23 @@ CREATE INDEX "Notification_read_idx" ON "Notification"("read");
 -- CreateIndex
 CREATE INDEX "Notification_createdAt_idx" ON "Notification"("createdAt");
 
+-- AddForeignKey
+ALTER TABLE "UserPreferences" ADD CONSTRAINT "UserPreferences_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Account" ADD CONSTRAINT "Account_linkedBankId_fkey" FOREIGN KEY ("linkedBankId") REFERENCES "LinkedBank"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Stack" ADD CONSTRAINT "Stack_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_stackId_fkey" FOREIGN KEY ("stackId") REFERENCES "Stack"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
