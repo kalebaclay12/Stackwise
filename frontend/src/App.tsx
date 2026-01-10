@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { useAuthStore } from './store/authStore';
 import { ThemeProvider } from './contexts/ThemeContext';
 import LoginPage from './pages/LoginPage';
@@ -40,6 +41,7 @@ function App() {
         />
       </Routes>
     </BrowserRouter>
+        <Analytics />
     </ThemeProvider>
   );
 }
