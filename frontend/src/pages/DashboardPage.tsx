@@ -258,14 +258,43 @@ export default function DashboardPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Accounts</h2>
-            <button
-              onClick={() => setShowCreateAccount(true)}
-              className="btn-secondary flex items-center gap-2"
-              title="Create a local test account"
-            >
-              <Plus className="w-4 h-4" />
-              Add Local Account
-            </button>
+            <div className="flex gap-2">
+              {selectedAccount?.linkedBankId ? (
+                <button
+                  onClick={() => handleSyncAccount(selectedAccount.linkedBankId!)}
+                  disabled={isSyncing}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync Balance'}
+                </button>
+              ) : selectedAccount && !selectedAccount.linkedBankId ? (
+                <>
+                  <button
+                    onClick={() => setShowEditAccount(true)}
+                    className="btn-secondary flex items-center gap-2"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </>
+              ) : null}
+              <button
+                onClick={() => setShowCreateAccount(true)}
+                className="btn-secondary flex items-center gap-2"
+                title="Create a local test account"
+              >
+                <Plus className="w-4 h-4" />
+                Add Local Account
+              </button>
+            </div>
           </div>
 
           {accounts.length === 0 ? (
@@ -306,52 +335,6 @@ export default function DashboardPage() {
 
         {selectedAccount && (
           <>
-            {/* Account Controls Section */}
-            <div className="mb-6">
-              <div className="card">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                      Account Controls
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Manage settings for <strong>{selectedAccount.name}</strong>
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    {selectedAccount.linkedBankId ? (
-                      <button
-                        onClick={() => handleSyncAccount(selectedAccount.linkedBankId!)}
-                        disabled={isSyncing}
-                        className="btn-primary flex items-center gap-2"
-                      >
-                        <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                        {isSyncing ? 'Syncing...' : 'Sync Balance'}
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setShowEditAccount(true)}
-                          className="btn-secondary flex items-center gap-2"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                          Edit Account
-                        </button>
-                        <button
-                          onClick={handleDeleteAccount}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete Account
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Transactions Section */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <div>
