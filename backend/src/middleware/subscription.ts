@@ -66,7 +66,7 @@ export const checkStackLimit = async (
   next: NextFunction
 ) => {
   try {
-    const { accountId } = req.body;
+    const { accountId } = req.params;
 
     if (!accountId) {
       return res.status(400).json({ message: 'Account ID is required' });
