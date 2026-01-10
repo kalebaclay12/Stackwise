@@ -1,6 +1,6 @@
 import { useState, FormEvent, useRef, useEffect } from 'react';
 import { useAccountStore } from '../store/accountStore';
-import { X, DollarSign, Calendar, FileText, Tag } from 'lucide-react';
+import { X, DollarSign, FileText, Tag } from 'lucide-react';
 
 interface CreateTransactionModalProps {
   accountId: string;
@@ -12,7 +12,6 @@ export default function CreateTransactionModal({ accountId, onClose }: CreateTra
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
   const { refreshCurrentAccount } = useAccountStore();
   const descriptionInputRef = useRef<HTMLInputElement>(null);
