@@ -192,10 +192,28 @@ export const importCSVTransactions = async (req: AuthRequest, res: Response, nex
           continue;
         }
 
-        // Parse and validate date
-        const txnDate = new Date(date);
+        // Parse and validate date - try multiple formats
+        let txnDate: Date;
+
+        // Try ISO format first (YYYY-MM-DD)
+        txnDate = new Date(date);
+
+        // If invalid, try parsing MM/DD/YYYY or DD/MM/YYYY
         if (isNaN(txnDate.getTime())) {
-          errors.push(`Skipped transaction "${description}": invalid date`);
+          const parts = date.split(/[-\/]/);
+          if (parts.length === 3) {
+            // Try MM/DD/YYYY
+            txnDate = new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
+
+            // If still invalid, try DD/MM/YYYY
+            if (isNaN(txnDate.getTime())) {
+              txnDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            }
+          }
+        }
+
+        if (isNaN(txnDate.getTime())) {
+          errors.push(`Skipped transaction "${description}": invalid date format (${date})`);
           skipped++;
           continue;
         }
