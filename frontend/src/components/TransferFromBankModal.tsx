@@ -1,7 +1,8 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import { useAccountStore } from '../store/accountStore';
 import { X, Building2 } from 'lucide-react';
 import axios from '../services/api';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface TransferFromBankModalProps {
   linkedBankId: string;
@@ -15,6 +16,10 @@ export default function TransferFromBankModal({ linkedBankId, onClose, onSuccess
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { accounts } = useAccountStore();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   useEffect(() => {
     if (accounts.length > 0 && !selectedAccountId) {
@@ -55,13 +60,10 @@ export default function TransferFromBankModal({ linkedBankId, onClose, onSuccess
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
+        ref={modalRef}
         className="bg-white rounded-xl max-w-md w-full p-6"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

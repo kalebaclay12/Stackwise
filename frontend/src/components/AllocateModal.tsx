@@ -1,7 +1,8 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef } from 'react';
 import { Stack } from '../types';
 import { useAccountStore } from '../store/accountStore';
 import { X, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface AllocateModalProps {
   stack: Stack;
@@ -13,6 +14,10 @@ export default function AllocateModal({ stack, mode, onClose }: AllocateModalPro
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { allocateToStack, deallocateFromStack } = useAccountStore();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -51,13 +56,10 @@ export default function AllocateModal({ stack, mode, onClose }: AllocateModalPro
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
+        ref={modalRef}
         className="bg-white rounded-xl max-w-md w-full p-6"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

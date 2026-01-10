@@ -114,6 +114,9 @@ export const transactionAPI = {
 
   create: (accountId: string, data: Partial<Transaction>) =>
     api.post<Transaction>(`/accounts/${accountId}/transactions`, data),
+
+  delete: (transactionId: string) =>
+    api.delete(`/transactions/${transactionId}`),
 };
 
 export const transactionMatcherAPI = {

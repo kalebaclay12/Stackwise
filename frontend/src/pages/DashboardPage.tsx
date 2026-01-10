@@ -306,58 +306,82 @@ export default function DashboardPage() {
 
         {selectedAccount && (
           <>
+            {/* Account Controls Section */}
+            <div className="mb-6">
+              <div className="card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                      Account Controls
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Manage settings for <strong>{selectedAccount.name}</strong>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {selectedAccount.linkedBankId ? (
+                      <button
+                        onClick={() => handleSyncAccount(selectedAccount.linkedBankId!)}
+                        disabled={isSyncing}
+                        className="btn-primary flex items-center gap-2"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                        {isSyncing ? 'Syncing...' : 'Sync Balance'}
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setShowEditAccount(true)}
+                          className="btn-secondary flex items-center gap-2"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          Edit Account
+                        </button>
+                        <button
+                          onClick={handleDeleteAccount}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete Account
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Transactions Section */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {selectedAccount.name}
+                    Transactions
                   </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Transaction history for {selectedAccount.name}
+                  </p>
                 </div>
-                <div className="flex gap-2">
-                  {selectedAccount.linkedBankId ? (
+                {!selectedAccount.linkedBankId && (
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => handleSyncAccount(selectedAccount.linkedBankId!)}
-                      disabled={isSyncing}
+                      onClick={() => setShowCreateTransaction(true)}
                       className="btn-primary flex items-center gap-2"
+                      title="Add a transaction manually"
                     >
-                      <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                      {isSyncing ? 'Syncing...' : 'Sync Balance'}
+                      <DollarSign className="w-4 h-4" />
+                      Add Transaction
                     </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => setShowCreateTransaction(true)}
-                        className="btn-primary flex items-center gap-2"
-                        title="Add a transaction manually"
-                      >
-                        <DollarSign className="w-4 h-4" />
-                        Add Transaction
-                      </button>
-                      <button
-                        onClick={() => setShowImportCSV(true)}
-                        className="btn-secondary flex items-center gap-2"
-                        title="Import transactions from CSV"
-                      >
-                        <Upload className="w-4 h-4" />
-                        Import CSV
-                      </button>
-                      <button
-                        onClick={() => setShowEditAccount(true)}
-                        className="btn-secondary flex items-center gap-2"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={handleDeleteAccount}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                      </button>
-                    </>
-                  )}
-                </div>
+                    <button
+                      onClick={() => setShowImportCSV(true)}
+                      className="btn-secondary flex items-center gap-2"
+                      title="Import transactions from CSV"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Import CSV
+                    </button>
+                  </div>
+                )}
               </div>
               <TransactionHistory
                 accountId={selectedAccount.id}

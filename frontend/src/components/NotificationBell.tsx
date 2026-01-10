@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Trash2 } from 'lucide-react';
 import { notificationAPI, Notification } from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +10,9 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useClickOutside(dropdownRef, () => setIsOpen(false));
 
   useEffect(() => {
     fetchUnreadCount();
@@ -23,17 +27,6 @@ export default function NotificationBell() {
       fetchNotifications();
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const fetchUnreadCount = async () => {
     try {

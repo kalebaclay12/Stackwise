@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Transaction } from '../types';
 import { transactionAPI, transactionMatcherAPI } from '../services/api';
-import { ArrowUpCircle, ArrowDownCircle, ArrowLeftRight, Layers, ChevronsDown, ChevronsUp, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, ArrowLeftRight, Layers, ChevronsDown, ChevronsUp, ChevronLeft, ChevronRight, X, MoreVertical, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAccountStore } from '../store/accountStore';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface TransactionHistoryProps {
   accountId?: string;
@@ -16,9 +17,14 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const { refreshCurrentAccount } = useAccountStore();
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE_COLLAPSED = 5;
   const ITEMS_PER_PAGE_EXPANDED = 10;
+
+  // Close dropdown when clicking outside
+  useClickOutside(dropdownRef, () => setOpenDropdownId(null));
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -170,6 +176,34 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
     }
   };
 
+  const handleDeleteTransaction = async (transactionId: string) => {
+    if (!confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await transactionAPI.delete(transactionId);
+      // Refresh transactions
+      const fetchTransactions = async () => {
+        let response;
+        if (accountId) {
+          response = await transactionAPI.getByAccount(accountId, { limit: 100 });
+        } else if (stackId) {
+          response = await transactionAPI.getByStack(stackId, { limit: 100 });
+        }
+        if (response) {
+          setTransactions(response.data);
+        }
+      };
+      await fetchTransactions();
+      // Refresh account and stack data
+      await refreshCurrentAccount();
+      setOpenDropdownId(null);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to delete transaction');
+    }
+  };
+
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
@@ -239,6 +273,35 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
                   <X className="w-4 h-4" />
                 </button>
               )}
+              {/* Three-dot menu for transaction actions */}
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenDropdownId(openDropdownId === transaction.id ? null : transaction.id);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
+                  title="Transaction options"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+
+                {openDropdownId === transaction.id && (
+                  <div
+                    ref={dropdownRef}
+                    className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => handleDeleteTransaction(transaction.id)}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-red-600 dark:text-red-400"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Transaction</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))}

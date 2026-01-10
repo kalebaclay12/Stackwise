@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { X, ArrowUpCircle, ArrowDownCircle, TrendingUp, Calendar } from 'lucide-react';
 import { Stack } from '../types';
 import TransactionHistory from './TransactionHistory';
 import AllocateModal from './AllocateModal';
 import { calculatePaymentAmount, formatDaysUntilDue } from '../utils/paymentCalculator';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface StackDetailModalProps {
   stack: Stack;
@@ -13,6 +14,10 @@ interface StackDetailModalProps {
 export default function StackDetailModal({ stack, onClose }: StackDetailModalProps) {
   const [showAllocate, setShowAllocate] = useState(false);
   const [showDeallocate, setShowDeallocate] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -75,13 +80,10 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
 
   return (
     <>
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
-        onClick={onClose}
-      >
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div
+          ref={modalRef}
           className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full shadow-2xl my-8"
-          onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="border-b border-gray-200 dark:border-gray-700 p-6">

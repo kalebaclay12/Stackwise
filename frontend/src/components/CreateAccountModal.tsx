@@ -1,6 +1,7 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef } from 'react';
 import { useAccountStore } from '../store/accountStore';
 import { X, Wallet, TrendingUp } from 'lucide-react';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface CreateAccountModalProps {
   onClose: () => void;
@@ -30,6 +31,10 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
   const [color, setColor] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { createAccount } = useAccountStore();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   const colorOptions = type === 'checking' ? CHECKING_GRADIENTS : SAVINGS_GRADIENTS;
 
@@ -48,13 +53,10 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
+        ref={modalRef}
         className="bg-white rounded-xl max-w-md w-full p-6"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-semibold">Create Local Test Account</h2>

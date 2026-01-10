@@ -1,8 +1,9 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef } from 'react';
 import { Stack } from '../types';
 import { X, CheckCircle2, RefreshCw, Edit3, Trash2 } from 'lucide-react';
 import { useAccountStore } from '../store/accountStore';
 import { stackAPI } from '../services/api';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface StackCompletionModalProps {
   stack: Stack;
@@ -17,6 +18,10 @@ export default function StackCompletionModal({ stack, onClose }: StackCompletion
   const [newAutoAllocateAmount, setNewAutoAllocateAmount] = useState(stack.autoAllocateAmount?.toString() || '');
   const [isLoading, setIsLoading] = useState(false);
   const { refreshCurrentAccount, deleteStack } = useAccountStore();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   const handleResetSame = async () => {
     setIsLoading(true);
@@ -79,13 +84,10 @@ export default function StackCompletionModal({ stack, onClose }: StackCompletion
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
+        ref={modalRef}
         className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

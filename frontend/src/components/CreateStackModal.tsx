@@ -5,6 +5,7 @@ import { X, Target, Calendar, Repeat } from 'lucide-react';
 import { calculatePaymentAmount, getFrequencyLabel, formatDaysUntilDue } from '../utils/paymentCalculator';
 import { TIER_LIMITS } from '../types';
 import UpgradePrompt from './UpgradePrompt';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface CreateStackModalProps {
   accountId: string;
@@ -38,6 +39,10 @@ export default function CreateStackModal({ accountId, onClose }: CreateStackModa
   const { createStack, stacks } = useAccountStore();
   const { user } = useAuthStore();
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   // Check subscription tier limits
   const currentStackCount = stacks[accountId]?.length || 0;
@@ -104,13 +109,10 @@ export default function CreateStackModal({ accountId, onClose }: CreateStackModa
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
+        ref={modalRef}
         className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

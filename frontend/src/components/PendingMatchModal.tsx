@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, CheckCircle, XCircle, AlertCircle, TrendingDown } from 'lucide-react';
 import { Transaction, Stack } from '../types';
 import { transactionMatcherAPI } from '../services/api';
 import { useAccountStore } from '../store/accountStore';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface PendingMatch {
   transaction: Transaction;
@@ -20,6 +21,10 @@ export default function PendingMatchModal({ accountId, onClose, onMatchesProcess
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const { refreshCurrentAccount } = useAccountStore();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   useEffect(() => {
     loadPendingMatches();
@@ -93,13 +98,10 @@ export default function PendingMatchModal({ accountId, onClose, onMatchesProcess
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div
+        ref={modalRef}
         className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full shadow-2xl my-8"
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="border-b border-gray-200 dark:border-gray-700 p-6">

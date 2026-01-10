@@ -1,7 +1,8 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef } from 'react';
 import { X, Edit3 } from 'lucide-react';
 import { Account } from '../types';
 import { accountAPI } from '../services/api';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface EditAccountModalProps {
   account: Account;
@@ -13,6 +14,10 @@ export default function EditAccountModal({ account, onClose, onSuccess }: EditAc
   const [name, setName] = useState(account.name);
   const [type, setType] = useState<'checking' | 'savings'>(account.type);
   const [isLoading, setIsLoading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -30,13 +35,10 @@ export default function EditAccountModal({ account, onClose, onSuccess }: EditAc
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
+        ref={modalRef}
         className="bg-white rounded-xl max-w-md w-full p-6"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

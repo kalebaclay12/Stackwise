@@ -1,6 +1,7 @@
 import { useState, FormEvent, useRef, useEffect } from 'react';
 import { useAccountStore } from '../store/accountStore';
 import { X, DollarSign, FileText, Tag } from 'lucide-react';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface CreateTransactionModalProps {
   accountId: string;
@@ -15,6 +16,10 @@ export default function CreateTransactionModal({ accountId, onClose }: CreateTra
   const [isLoading, setIsLoading] = useState(false);
   const { refreshCurrentAccount } = useAccountStore();
   const descriptionInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onClose);
 
   useEffect(() => {
     descriptionInputRef.current?.focus();
@@ -44,13 +49,10 @@ export default function CreateTransactionModal({ accountId, onClose }: CreateTra
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
+        ref={modalRef}
         className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

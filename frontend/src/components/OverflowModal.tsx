@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, AlertCircle } from 'lucide-react';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface OverflowModalProps {
   stackName: string;
@@ -23,19 +24,20 @@ export default function OverflowModal({
   onCancel,
 }: OverflowModalProps) {
   const [selectedBehavior, setSelectedBehavior] = useState<'next_priority' | 'available_balance' | 'keep_in_stack'>(defaultBehavior);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close modal when clicking outside
+  useClickOutside(modalRef, onCancel);
 
   const handleConfirm = () => {
     onConfirm(selectedBehavior);
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onCancel}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
+        ref={modalRef}
         className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
