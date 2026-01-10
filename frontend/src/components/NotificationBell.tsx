@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Check, X, Trash2 } from 'lucide-react';
+import { Bell, Check, Trash2 } from 'lucide-react';
 import { notificationAPI, Notification } from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -114,7 +114,7 @@ export default function NotificationBell() {
     setIsOpen(false);
   };
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (_type: string) => {
     // You can customize icons based on notification type
     return '🔔';
   };
