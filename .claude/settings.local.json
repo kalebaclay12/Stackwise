@@ -34,7 +34,8 @@
       "Bash(npx tsx:*)",
       "Bash(del srcutilspaymentCalculator.test.ts)",
       "Bash(del srcutilspaymentCalculator.simple-test.ts)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(timeout:*)"
     ]
   }
 }
