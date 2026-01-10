@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useAccountStore } from '../store/accountStore';
 import { useTheme } from '../contexts/ThemeContext';
-import { LogOut, Plus, Building2, RefreshCw, Edit3, Trash2, ChevronDown, User, Sun, Moon, Settings, Scan, Upload } from 'lucide-react';
+import { LogOut, Plus, Building2, RefreshCw, Edit3, Trash2, ChevronDown, User, Sun, Moon, Settings, Scan, Upload, DollarSign } from 'lucide-react';
 import AccountCard from '../components/AccountCard';
 import StackList from '../components/StackList';
 import CreateStackModal from '../components/CreateStackModal';
@@ -16,6 +16,7 @@ import TransactionHistory from '../components/TransactionHistory';
 import PendingMatchModal from '../components/PendingMatchModal';
 import NotificationBell from '../components/NotificationBell';
 import ImportCSVModal from '../components/ImportCSVModal';
+import CreateTransactionModal from '../components/CreateTransactionModal';
 import axios from '../services/api';
 import { accountAPI, transactionMatcherAPI } from '../services/api';
 
@@ -36,6 +37,7 @@ export default function DashboardPage() {
   const [showPendingMatches, setShowPendingMatches] = useState(false);
   const [pendingMatchesCount, setPendingMatchesCount] = useState(0);
   const [showImportCSV, setShowImportCSV] = useState(false);
+  const [showCreateTransaction, setShowCreateTransaction] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
@@ -324,6 +326,14 @@ export default function DashboardPage() {
                   ) : (
                     <>
                       <button
+                        onClick={() => setShowCreateTransaction(true)}
+                        className="btn-primary flex items-center gap-2"
+                        title="Add a transaction manually"
+                      >
+                        <DollarSign className="w-4 h-4" />
+                        Add Transaction
+                      </button>
+                      <button
                         onClick={() => setShowImportCSV(true)}
                         className="btn-secondary flex items-center gap-2"
                         title="Import transactions from CSV"
@@ -441,6 +451,15 @@ export default function DashboardPage() {
           onClose={() => {
             setShowImportCSV(false);
             refreshCurrentAccount();
+          }}
+        />
+      )}
+
+      {showCreateTransaction && selectedAccount && (
+        <CreateTransactionModal
+          accountId={selectedAccount.id}
+          onClose={() => {
+            setShowCreateTransaction(false);
           }}
         />
       )}
