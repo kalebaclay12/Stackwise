@@ -11,7 +11,6 @@ import CreateAccountModal from '../components/CreateAccountModal';
 import EditAccountModal from '../components/EditAccountModal';
 import BankLinkButton from '../components/BankLinkButton';
 import LinkedBanksList from '../components/LinkedBanksList';
-import TransferFromBankModal from '../components/TransferFromBankModal';
 import TransactionHistory from '../components/TransactionHistory';
 import PendingMatchModal from '../components/PendingMatchModal';
 import NotificationBell from '../components/NotificationBell';
@@ -29,8 +28,6 @@ export default function DashboardPage() {
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showEditAccount, setShowEditAccount] = useState(false);
   const [showBankSection, setShowBankSection] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [selectedLinkedBankId, setSelectedLinkedBankId] = useState<string | null>(null);
   const [linkedBanksRefresh, setLinkedBanksRefresh] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
@@ -75,6 +72,28 @@ export default function DashboardPage() {
       await refreshCurrentAccount();
     } catch (error: any) {
       alert(error.response?.data?.message || 'Failed to sync account');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSyncAllBanks = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await axios.post('/plaid/sync-all');
+      await fetchAccounts();
+      await refreshCurrentAccount();
+      setLinkedBanksRefresh(prev => prev + 1);
+
+      // Show success message with details
+      const data = response.data;
+      if (data.newTransactions > 0) {
+        alert(`Successfully synced ${data.synced} bank account(s)!\n${data.newTransactions} new transaction(s) imported.`);
+      } else {
+        alert(`Successfully synced ${data.synced} bank account(s)!`);
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to sync banks');
     } finally {
       setIsSyncing(false);
     }
@@ -240,46 +259,55 @@ export default function DashboardPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Linked Bank Accounts</h2>
-              <BankLinkButton onSuccess={() => {
-                setLinkedBanksRefresh(prev => prev + 1);
-                refreshCurrentAccount();
-              }} />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSyncAllBanks}
+                  disabled={isSyncing}
+                  className="btn-secondary flex items-center gap-2"
+                  title="Sync all linked bank accounts"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync All Banks'}
+                </button>
+                <BankLinkButton onSuccess={() => {
+                  setLinkedBanksRefresh(prev => prev + 1);
+                  refreshCurrentAccount();
+                }} />
+              </div>
             </div>
             <LinkedBanksList
               refreshTrigger={linkedBanksRefresh}
-              onTransferClick={(linkedBankId) => {
-                setSelectedLinkedBankId(linkedBankId);
-                setShowTransferModal(true);
-              }}
             />
           </div>
         )}
 
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Accounts</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {selectedAccount?.linkedBankId ? (
                 <button
                   onClick={() => handleSyncAccount(selectedAccount.linkedBankId!)}
                   disabled={isSyncing}
-                  className="btn-primary flex items-center gap-2"
+                  className="btn-primary flex items-center gap-2 text-sm sm:text-base"
                 >
                   <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                  {isSyncing ? 'Syncing...' : 'Sync Balance'}
+                  <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Balance'}</span>
+                  <span className="sm:hidden">Sync</span>
                 </button>
               ) : selectedAccount && !selectedAccount.linkedBankId ? (
                 <>
+                  {/* Hide Edit/Delete buttons on mobile since they're in the card dropdown */}
                   <button
                     onClick={() => setShowEditAccount(true)}
-                    className="btn-secondary flex items-center gap-2"
+                    className="hidden md:flex btn-secondary items-center gap-2"
                   >
                     <Edit3 className="w-4 h-4" />
                     Edit
                   </button>
                   <button
                     onClick={handleDeleteAccount}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                    className="hidden md:flex px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
@@ -288,11 +316,12 @@ export default function DashboardPage() {
               ) : null}
               <button
                 onClick={() => setShowCreateAccount(true)}
-                className="btn-secondary flex items-center gap-2"
+                className="btn-secondary flex items-center gap-2 text-sm sm:text-base whitespace-nowrap"
                 title="Create a local test account"
               >
                 <Plus className="w-4 h-4" />
-                Add Local Account
+                <span className="hidden sm:inline">Add Local Account</span>
+                <span className="sm:hidden">Add Account</span>
               </button>
             </div>
           </div>
@@ -327,6 +356,14 @@ export default function DashboardPage() {
                   account={account}
                   isSelected={selectedAccount?.id === account.id}
                   onClick={() => selectAccount(account)}
+                  onEdit={!account.linkedBankId ? () => {
+                    selectAccount(account);
+                    setShowEditAccount(true);
+                  } : undefined}
+                  onDelete={!account.linkedBankId ? () => {
+                    selectAccount(account);
+                    handleDeleteAccount();
+                  } : undefined}
                 />
               ))}
             </div>
@@ -336,7 +373,7 @@ export default function DashboardPage() {
         {selectedAccount && (
           <>
             <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                     Transactions
@@ -346,22 +383,24 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 {!selectedAccount.linkedBankId && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => setShowCreateTransaction(true)}
-                      className="btn-primary flex items-center gap-2"
+                      className="btn-primary flex items-center gap-2 text-sm sm:text-base"
                       title="Add a transaction manually"
                     >
                       <DollarSign className="w-4 h-4" />
-                      Add Transaction
+                      <span className="hidden sm:inline">Add Transaction</span>
+                      <span className="sm:hidden">Add</span>
                     </button>
                     <button
                       onClick={() => setShowImportCSV(true)}
-                      className="btn-secondary flex items-center gap-2"
+                      className="btn-secondary flex items-center gap-2 text-sm sm:text-base"
                       title="Import transactions from CSV"
                     >
                       <Upload className="w-4 h-4" />
-                      Import CSV
+                      <span className="hidden sm:inline">Import CSV</span>
+                      <span className="sm:hidden">Import</span>
                     </button>
                   </div>
                 )}
@@ -373,19 +412,20 @@ export default function DashboardPage() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   Stacks in {selectedAccount.name}
                 </h2>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {pendingMatchesCount > 0 && (
                     <button
                       onClick={handleViewPendingMatches}
-                      className="btn-secondary flex items-center gap-2 relative"
+                      className="btn-secondary flex items-center gap-2 relative text-sm sm:text-base"
                       title={`Review ${pendingMatchesCount} pending transaction match${pendingMatchesCount !== 1 ? 'es' : ''}`}
                     >
                       <Scan className="w-4 h-4" />
-                      Review Matches
+                      <span className="hidden sm:inline">Review Matches</span>
+                      <span className="sm:hidden">Matches</span>
                       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg animate-pulse">
                         {pendingMatchesCount}
                       </span>
@@ -393,10 +433,11 @@ export default function DashboardPage() {
                   )}
                   <button
                     onClick={() => setShowCreateStack(true)}
-                    className="btn-primary flex items-center gap-2"
+                    className="btn-primary flex items-center gap-2 text-sm sm:text-base whitespace-nowrap"
                   >
                     <Plus className="w-4 h-4" />
-                    Create Stack
+                    <span className="hidden sm:inline">Create Stack</span>
+                    <span className="sm:hidden">Create</span>
                   </button>
                 </div>
               </div>
@@ -423,20 +464,6 @@ export default function DashboardPage() {
           onClose={() => setShowEditAccount(false)}
           onSuccess={() => {
             refreshCurrentAccount();
-          }}
-        />
-      )}
-
-      {showTransferModal && selectedLinkedBankId && (
-        <TransferFromBankModal
-          linkedBankId={selectedLinkedBankId}
-          onClose={() => {
-            setShowTransferModal(false);
-            setSelectedLinkedBankId(null);
-          }}
-          onSuccess={() => {
-            refreshCurrentAccount();
-            setLinkedBanksRefresh(prev => prev + 1);
           }}
         />
       )}

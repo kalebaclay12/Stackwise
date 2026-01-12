@@ -7,6 +7,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -72,6 +73,12 @@ export default function StackList({ accountId }: StackListProps) {
         distance: 15, // Increased distance to prevent accidental drags when selecting text
         delay: 100, // Add small delay to distinguish drag from click/select
         tolerance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Longer delay for touch to prevent accidental drags on mobile
+        tolerance: 8, // More tolerance for touch input
       },
     }),
     useSensor(KeyboardSensor, {

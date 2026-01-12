@@ -1,13 +1,30 @@
 import { Account } from '../types';
-import { Wallet, TrendingUp, Building2, TestTube } from 'lucide-react';
+import { Wallet, TrendingUp, Building2, TestTube, MoreVertical, Edit3, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 
 interface AccountCardProps {
   account: Account;
   isSelected: boolean;
   onClick: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export default function AccountCard({ account, isSelected, onClick }: AccountCardProps) {
+export default function AccountCard({ account, isSelected, onClick, onEdit, onDelete }: AccountCardProps) {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -28,6 +45,9 @@ export default function AccountCard({ account, isSelected, onClick }: AccountCar
     : (account.type === 'checking'
         ? 'bg-gradient-to-br from-blue-500 to-blue-600'
         : 'bg-gradient-to-br from-green-500 to-emerald-600');
+
+  // Show dropdown menu for non-linked accounts only
+  const showMenuButton = !account.linkedBankId && (onEdit || onDelete);
 
   return (
     <button
@@ -50,6 +70,53 @@ export default function AccountCard({ account, isSelected, onClick }: AccountCar
           </div>
         )}
       </div>
+
+      {/* Dropdown Menu Button for Test Accounts */}
+      {showMenuButton && (
+        <div className="absolute bottom-3 right-3 z-20" ref={dropdownRef}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDropdown(!showDropdown);
+            }}
+            className="w-8 h-8 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
+            title="Account options"
+          >
+            <MoreVertical className="w-4 h-4 text-white" />
+          </button>
+
+          {showDropdown && (
+            <div className="absolute bottom-full right-0 mb-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1">
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDropdown(false);
+                    onEdit();
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-gray-700 dark:text-gray-300"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>Edit</span>
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDropdown(false);
+                    onDelete();
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Gradient Background */}
       <div className={`${defaultGradientClass} p-6 text-white`} style={getGradientStyle()}>
