@@ -69,6 +69,7 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
   const [sortedStacks, setSortedStacks] = useState<Stack[]>([]);
   const [isDraggingAny, setIsDraggingAny] = useState(false);
 
+  // Only activate sensors when dragging is enabled
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -76,15 +77,18 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
         delay: 100, // Add small delay to distinguish drag from click/select
         tolerance: 5,
       },
+      disabled: disableDrag,
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
         delay: 250, // Longer delay for touch to prevent accidental drags on mobile
         tolerance: 8, // More tolerance for touch input
       },
+      disabled: disableDrag,
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
+      disabled: disableDrag,
     })
   );
 
