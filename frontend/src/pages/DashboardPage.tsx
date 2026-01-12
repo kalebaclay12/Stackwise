@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useAccountStore } from '../store/accountStore';
 import { useTheme } from '../contexts/ThemeContext';
-import { LogOut, Plus, Building2, RefreshCw, Edit3, Trash2, ChevronDown, User, Sun, Moon, Settings, Scan, Upload, DollarSign } from 'lucide-react';
+import { LogOut, Plus, Building2, RefreshCw, ChevronDown, User, Sun, Moon, Settings, Scan, Upload, DollarSign } from 'lucide-react';
 import AccountCard from '../components/AccountCard';
 import StackList from '../components/StackList';
 import CreateStackModal from '../components/CreateStackModal';
@@ -284,46 +284,15 @@ export default function DashboardPage() {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Accounts</h2>
-            <div className="flex flex-wrap gap-2">
-              {selectedAccount?.linkedBankId ? (
-                <button
-                  onClick={() => handleSyncAccount(selectedAccount.linkedBankId!)}
-                  disabled={isSyncing}
-                  className="btn-primary flex items-center gap-2 text-sm sm:text-base"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Balance'}</span>
-                  <span className="sm:hidden">Sync</span>
-                </button>
-              ) : selectedAccount && !selectedAccount.linkedBankId ? (
-                <>
-                  {/* Hide Edit/Delete buttons on mobile since they're in the card dropdown */}
-                  <button
-                    onClick={() => setShowEditAccount(true)}
-                    className="hidden md:flex btn-secondary items-center gap-2"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    className="hidden md:flex px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </button>
-                </>
-              ) : null}
-              <button
-                onClick={() => setShowCreateAccount(true)}
-                className="btn-secondary flex items-center gap-2 text-sm sm:text-base whitespace-nowrap"
-                title="Create a local test account"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Local Account</span>
-                <span className="sm:hidden">Add Account</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setShowCreateAccount(true)}
+              className="btn-secondary flex items-center gap-2 text-sm sm:text-base whitespace-nowrap w-fit"
+              title="Create a local test account"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Local Account</span>
+              <span className="sm:hidden">Add Account</span>
+            </button>
           </div>
 
           {accounts.length === 0 ? (
