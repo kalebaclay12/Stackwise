@@ -68,6 +68,19 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
     );
   }, [targetAmount, targetDueDate, paymentFrequency, firstPaymentDate, stack.currentAmount]);
 
+  // Update auto-allocate amount when payment calculation changes if it's below the new minimum
+  useEffect(() => {
+    if (autoAllocate && paymentCalculation && autoAllocateAmount) {
+      const currentAmount = parseFloat(autoAllocateAmount);
+      const minAmount = paymentCalculation.amountPerPayment;
+
+      // If current amount is below the new minimum, update to the minimum
+      if (!isNaN(currentAmount) && currentAmount < minAmount) {
+        setAutoAllocateAmount(minAmount.toFixed(2));
+      }
+    }
+  }, [paymentCalculation, autoAllocate]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
