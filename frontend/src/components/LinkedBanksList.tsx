@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, Trash2, ArrowDownCircle } from 'lucide-react';
+import { Building2, Trash2 } from 'lucide-react';
 import axios from '../services/api';
 
 interface LinkedBank {
@@ -13,11 +13,10 @@ interface LinkedBank {
 }
 
 interface LinkedBanksListProps {
-  onTransferClick?: (linkedBankId: string) => void;
   refreshTrigger?: number;
 }
 
-export default function LinkedBanksList({ onTransferClick, refreshTrigger }: LinkedBanksListProps) {
+export default function LinkedBanksList({ refreshTrigger }: LinkedBanksListProps) {
   const [linkedBanks, setLinkedBanks] = useState<LinkedBank[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -57,7 +56,7 @@ export default function LinkedBanksList({ onTransferClick, refreshTrigger }: Lin
       <div className="card text-center py-8">
         <Building2 className="w-12 h-12 mx-auto text-gray-400 mb-3" />
         <p className="text-gray-600">No linked bank accounts</p>
-        <p className="text-sm text-gray-500 mt-1">Link a bank account to transfer funds</p>
+        <p className="text-sm text-gray-500 mt-1">Link a bank account to view balances and transactions</p>
       </div>
     );
   }
@@ -83,15 +82,6 @@ export default function LinkedBanksList({ onTransferClick, refreshTrigger }: Lin
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {onTransferClick && (
-              <button
-                onClick={() => onTransferClick(bank.id)}
-                className="btn-primary flex items-center gap-2 text-sm"
-              >
-                <ArrowDownCircle className="w-4 h-4" />
-                Transfer
-              </button>
-            )}
             <button
               onClick={() => handleUnlink(bank.id, bank.institutionName)}
               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"

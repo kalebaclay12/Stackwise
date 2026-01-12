@@ -4,10 +4,10 @@ import {
   exchangePublicToken,
   getLinkedBanks,
   getBalances,
-  transferFunds,
   syncAccount,
   syncTransactions,
   unlinkBank,
+  syncAllBanks,
 } from '../controllers/plaid.controller';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -22,15 +22,6 @@ const exchangeTokenSchema = z.object({
   }),
 });
 
-const transferFundsSchema = z.object({
-  body: z.object({
-    linkedBankId: z.string(),
-    accountId: z.string(),
-    amount: z.number().positive(),
-    description: z.string().optional(),
-  }),
-});
-
 router.use(authenticate);
 router.use(checkSubscriptionTier);
 
@@ -41,7 +32,7 @@ router.get('/linked-banks', requireProTier, getLinkedBanks);
 router.get('/balances/:id', requireProTier, getBalances);
 router.post('/sync/:id', requireProTier, syncAccount);
 router.post('/sync-transactions/:id', requireProTier, syncTransactions);
-router.post('/transfer', requireProTier, validate(transferFundsSchema), transferFunds);
+router.post('/sync-all', requireProTier, syncAllBanks);
 router.delete('/linked-banks/:id', requireProTier, unlinkBank);
 
 export default router;

@@ -81,6 +81,18 @@ cron.schedule('0 * * * *', async () => {
   }
 });
 
+// Schedule daily bank sync at 3 AM
+cron.schedule('0 3 * * *', async () => {
+  console.log('Running scheduled daily bank sync...');
+  try {
+    const { syncAllBanksDaily } = await import('./services/bankSync.service');
+    const result = await syncAllBanksDaily();
+    console.log(`Daily bank sync completed: ${result.usersSynced} users, ${result.banksSynced} banks, ${result.totalNewTransactions} transactions`);
+  } catch (error) {
+    console.error('Error in scheduled daily bank sync:', error);
+  }
+});
+
 // Also run once at startup to process any missed allocations
 processPendingAllocations()
   .then((result) => {
@@ -103,6 +115,7 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Auto-allocation cron job scheduled (runs every hour)');
   console.log('Stack completion cron job scheduled (runs every hour)');
+  console.log('Bank sync cron job scheduled (runs daily at 3 AM)');
 });
 
 export default app;

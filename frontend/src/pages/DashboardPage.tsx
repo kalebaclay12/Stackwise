@@ -16,6 +16,7 @@ import PendingMatchModal from '../components/PendingMatchModal';
 import NotificationBell from '../components/NotificationBell';
 import ImportCSVModal from '../components/ImportCSVModal';
 import CreateTransactionModal from '../components/CreateTransactionModal';
+import RemoveLinkedBankModal from '../components/RemoveLinkedBankModal';
 import axios from '../services/api';
 import { accountAPI, transactionMatcherAPI } from '../services/api';
 
@@ -35,6 +36,7 @@ export default function DashboardPage() {
   const [pendingMatchesCount, setPendingMatchesCount] = useState(0);
   const [showImportCSV, setShowImportCSV] = useState(false);
   const [showCreateTransaction, setShowCreateTransaction] = useState(false);
+  const [showRemoveLinkedBank, setShowRemoveLinkedBank] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
@@ -259,15 +261,25 @@ export default function DashboardPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Linked Bank Accounts</h2>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={handleSyncAllBanks}
                   disabled={isSyncing}
-                  className="btn-secondary flex items-center gap-2"
+                  className="btn-secondary flex items-center gap-2 text-sm sm:text-base"
                   title="Sync all linked bank accounts"
                 >
                   <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                  {isSyncing ? 'Syncing...' : 'Sync All Banks'}
+                  <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync All Banks'}</span>
+                  <span className="sm:hidden">{isSyncing ? 'Syncing...' : 'Sync All'}</span>
+                </button>
+                <button
+                  onClick={() => setShowRemoveLinkedBank(true)}
+                  className="btn-secondary flex items-center gap-2 text-sm sm:text-base text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  title="Remove linked bank accounts"
+                >
+                  <Building2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Remove Linked Bank</span>
+                  <span className="sm:hidden">Remove Bank</span>
                 </button>
                 <BankLinkButton onSuccess={() => {
                   setLinkedBanksRefresh(prev => prev + 1);
@@ -466,6 +478,16 @@ export default function DashboardPage() {
           }}
         />
       )}
+
+      <RemoveLinkedBankModal
+        isOpen={showRemoveLinkedBank}
+        onClose={() => setShowRemoveLinkedBank(false)}
+        onSuccess={() => {
+          setLinkedBanksRefresh(prev => prev + 1);
+          fetchAccounts();
+          refreshCurrentAccount();
+        }}
+      />
     </div>
   );
 }

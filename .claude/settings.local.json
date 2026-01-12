@@ -35,7 +35,13 @@
       "Bash(del srcutilspaymentCalculator.test.ts)",
       "Bash(del srcutilspaymentCalculator.simple-test.ts)",
       "Bash(npm start)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git pull:*)",
+      "Bash(node -e:*)",
+      "Bash(vercel --version:*)",
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(git -C \"c:\\\\Users\\\\thor4\\\\.claude\\\\projects\\\\Stackwise\" log --oneline -20)"
     ]
   }
 }
