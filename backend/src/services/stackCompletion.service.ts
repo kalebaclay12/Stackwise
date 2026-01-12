@@ -96,47 +96,56 @@ export class StackCompletionService {
       newAutoAllocateNextDate = nextDate;
     }
 
-    // Reset the stack to zero and set new due date
-    await prisma.stack.update({
-      where: { id: stackId },
-      data: {
-        currentAmount: 0,
-        isCompleted: false,
-        completedAt: null,
-        pendingReset: false,
-        targetDueDate: newTargetDueDate,
-        autoAllocateNextDate: newAutoAllocateNextDate,
-      },
-    });
+    // Store the current amount before resetting (CRITICAL: must be done before update)
+    const amountToReturn = stack.currentAmount;
 
-    // Create a transaction record for the reset
+    // Get account for transaction record
     const account = await prisma.account.findUnique({
       where: { id: stack.accountId },
     });
 
-    if (account) {
-      await prisma.transaction.create({
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    // Perform all updates in a single transaction to ensure data consistency
+    await prisma.$transaction(async (tx) => {
+      // Reset the stack to zero and set new due date
+      await tx.stack.update({
+        where: { id: stackId },
+        data: {
+          currentAmount: 0,
+          isCompleted: false,
+          completedAt: null,
+          pendingReset: false,
+          targetDueDate: newTargetDueDate,
+          autoAllocateNextDate: newAutoAllocateNextDate,
+        },
+      });
+
+      // Create a transaction record for the reset
+      await tx.transaction.create({
         data: {
           accountId: stack.accountId,
           stackId: stack.id,
           type: 'allocation',
-          amount: -stack.currentAmount,
+          amount: amountToReturn,
           description: `Stack "${stack.name}" auto-reset after completion`,
-          balance: account.availableBalance + stack.currentAmount,
+          balance: account.balance,
           isVirtual: true,
         },
       });
 
       // Return allocated funds to available balance
-      await prisma.account.update({
+      await tx.account.update({
         where: { id: stack.accountId },
         data: {
           availableBalance: {
-            increment: stack.currentAmount,
+            increment: amountToReturn,
           },
         },
       });
-    }
+    });
   }
 
   /**
@@ -160,28 +169,8 @@ export class StackCompletionService {
       throw new Error('Account not found');
     }
 
-    // Return current stack amount to available balance
-    await prisma.account.update({
-      where: { id: stack.accountId },
-      data: {
-        availableBalance: {
-          increment: stack.currentAmount,
-        },
-      },
-    });
-
-    // Create transaction for the reset
-    await prisma.transaction.create({
-      data: {
-        accountId: stack.accountId,
-        stackId: stack.id,
-        type: 'allocation',
-        amount: -stack.currentAmount,
-        description: `Stack "${stack.name}" reset after completion`,
-        balance: account.availableBalance + stack.currentAmount,
-        isVirtual: true,
-      },
-    });
+    // Store the current amount before resetting
+    const amountToReturn = stack.currentAmount;
 
     // Calculate next auto-allocation date properly based on start date and frequency
     let newAutoAllocateNextDate = stack.autoAllocateNextDate;
@@ -200,20 +189,46 @@ export class StackCompletionService {
       newAutoAllocateNextDate = nextDate;
     }
 
-    // Update stack with new parameters
-    await prisma.stack.update({
-      where: { id: stackId },
-      data: {
-        currentAmount: 0,
-        isCompleted: false,
-        completedAt: null,
-        pendingReset: false,
-        targetAmount: params.newTargetAmount ?? stack.targetAmount,
-        targetDueDate: params.newTargetDueDate ?? (params.keepDueDate ? stack.targetDueDate : null),
-        autoAllocateAmount: params.newAutoAllocateAmount ?? stack.autoAllocateAmount,
-        autoAllocateFrequency: params.newAutoAllocateFrequency ?? stack.autoAllocateFrequency,
-        autoAllocateNextDate: newAutoAllocateNextDate,
-      },
+    // Perform all updates in a single transaction
+    await prisma.$transaction(async (tx) => {
+      // Return current stack amount to available balance
+      await tx.account.update({
+        where: { id: stack.accountId },
+        data: {
+          availableBalance: {
+            increment: amountToReturn,
+          },
+        },
+      });
+
+      // Create transaction for the reset
+      await tx.transaction.create({
+        data: {
+          accountId: stack.accountId,
+          stackId: stack.id,
+          type: 'allocation',
+          amount: amountToReturn,
+          description: `Stack "${stack.name}" reset after completion`,
+          balance: account.balance,
+          isVirtual: true,
+        },
+      });
+
+      // Update stack with new parameters
+      await tx.stack.update({
+        where: { id: stackId },
+        data: {
+          currentAmount: 0,
+          isCompleted: false,
+          completedAt: null,
+          pendingReset: false,
+          targetAmount: params.newTargetAmount ?? stack.targetAmount,
+          targetDueDate: params.newTargetDueDate ?? (params.keepDueDate ? stack.targetDueDate : null),
+          autoAllocateAmount: params.newAutoAllocateAmount ?? stack.autoAllocateAmount,
+          autoAllocateFrequency: params.newAutoAllocateFrequency ?? stack.autoAllocateFrequency,
+          autoAllocateNextDate: newAutoAllocateNextDate,
+        },
+      });
     });
   }
 
