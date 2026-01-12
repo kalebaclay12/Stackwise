@@ -6,9 +6,10 @@ import { useClickOutside } from '../hooks/useClickOutside';
 interface CreateTransactionModalProps {
   accountId: string;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export default function CreateTransactionModal({ accountId, onClose }: CreateTransactionModalProps) {
+export default function CreateTransactionModal({ accountId, onClose, onSuccess }: CreateTransactionModalProps) {
   const [type, setType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -39,6 +40,9 @@ export default function CreateTransactionModal({ accountId, onClose }: CreateTra
       });
 
       await refreshCurrentAccount();
+      if (onSuccess) {
+        await onSuccess();
+      }
       onClose();
     } catch (error) {
       console.error('Create transaction error:', error);

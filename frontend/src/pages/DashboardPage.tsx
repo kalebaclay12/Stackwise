@@ -476,6 +476,9 @@ export default function DashboardPage() {
           onClose={() => {
             setShowCreateTransaction(false);
           }}
+          onSuccess={() => {
+            refreshCurrentAccount();
+          }}
         />
       )}
 
