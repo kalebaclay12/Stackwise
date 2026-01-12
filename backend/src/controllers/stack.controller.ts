@@ -121,6 +121,7 @@ export const updateStack = async (req: AuthRequest, res: Response, next: NextFun
       autoAllocateAmount,
       autoAllocateFrequency,
       autoAllocateStartDate,
+      targetDueDate,
       ...otherFields
     } = req.body;
 
@@ -135,6 +136,11 @@ export const updateStack = async (req: AuthRequest, res: Response, next: NextFun
 
     // Prepare update data
     const updateData: any = { ...otherFields };
+
+    // Convert targetDueDate string to Date if provided
+    if (targetDueDate !== undefined) {
+      updateData.targetDueDate = targetDueDate ? new Date(targetDueDate) : null;
+    }
 
     // Handle auto-allocation settings
     if (autoAllocate !== undefined) {
