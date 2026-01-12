@@ -4,7 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 
 export const createTransaction = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { accountId } = req.params;
+    const accountId = req.params.id; // Route uses :id, not :accountId
     const { type, amount, description, category } = req.body;
 
     console.log('Creating transaction:', { accountId, type, amount, description, category, userId: req.userId });
