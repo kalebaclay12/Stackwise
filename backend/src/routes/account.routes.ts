@@ -13,6 +13,9 @@ import {
   createStack,
   updateStackPriorities,
 } from '../controllers/stack.controller';
+import {
+  createTransaction,
+} from '../controllers/transaction.controller';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 import { checkSubscriptionTier, checkStackLimit, checkAutoAllocationFeature } from '../middleware/subscription';
@@ -75,6 +78,15 @@ const updateStackPrioritiesSchema = z.object({
   }),
 });
 
+const createTransactionSchema = z.object({
+  body: z.object({
+    type: z.enum(['deposit', 'withdrawal']),
+    amount: z.number().positive(),
+    description: z.string().min(1),
+    category: z.string().optional(),
+  }),
+});
+
 router.use(authenticate);
 router.use(checkSubscriptionTier);
 
@@ -84,6 +96,7 @@ router.post('/', validate(createAccountSchema), createAccount);
 router.put('/:id', validate(updateAccountSchema), updateAccount);
 router.delete('/:id', deleteAccount);
 router.get('/:id/transactions', getAccountTransactions);
+router.post('/:id/transactions', validate(createTransactionSchema), createTransaction);
 router.post('/:id/import-csv', importCSVTransactions);
 router.get('/:accountId/stacks', getStacksByAccount);
 router.post('/:accountId/stacks', validate(createStackSchema), checkStackLimit, checkAutoAllocationFeature, createStack);

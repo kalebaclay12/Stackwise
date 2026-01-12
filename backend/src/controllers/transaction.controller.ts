@@ -49,6 +49,7 @@ export const createTransaction = async (req: AuthRequest, res: Response, next: N
           description,
           category,
           balance: newBalance,
+          isVirtual: false, // Manual transaction represents real money movement
         },
       });
     });
