@@ -7,6 +7,8 @@ export const createTransaction = async (req: AuthRequest, res: Response, next: N
     const { accountId } = req.params;
     const { type, amount, description, category } = req.body;
 
+    console.log('Creating transaction:', { accountId, type, amount, description, category, userId: req.userId });
+
     const account = await prisma.account.findFirst({
       where: {
         id: accountId,
@@ -15,8 +17,11 @@ export const createTransaction = async (req: AuthRequest, res: Response, next: N
     });
 
     if (!account) {
+      console.log('Account not found for user:', req.userId);
       return res.status(404).json({ message: 'Account not found' });
     }
+
+    console.log('Account found:', { id: account.id, balance: account.balance, availableBalance: account.availableBalance });
 
     let newBalance = account.balance;
     let newAvailableBalance = account.availableBalance;

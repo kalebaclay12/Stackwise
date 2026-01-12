@@ -91,15 +91,19 @@ router.use(authenticate);
 router.use(checkSubscriptionTier);
 
 router.get('/', getAccounts);
-router.get('/:id', getAccountById);
 router.post('/', validate(createAccountSchema), createAccount);
-router.put('/:id', validate(updateAccountSchema), updateAccount);
-router.delete('/:id', deleteAccount);
+
+// More specific routes first (to avoid :id matching)
 router.get('/:id/transactions', getAccountTransactions);
 router.post('/:id/transactions', validate(createTransactionSchema), createTransaction);
 router.post('/:id/import-csv', importCSVTransactions);
 router.get('/:accountId/stacks', getStacksByAccount);
 router.post('/:accountId/stacks', validate(createStackSchema), checkStackLimit, checkAutoAllocationFeature, createStack);
 router.put('/:accountId/stacks/priorities', validate(updateStackPrioritiesSchema), updateStackPriorities);
+
+// Generic :id routes last
+router.get('/:id', getAccountById);
+router.put('/:id', validate(updateAccountSchema), updateAccount);
+router.delete('/:id', deleteAccount);
 
 export default router;

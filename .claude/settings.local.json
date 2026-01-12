@@ -41,7 +41,8 @@
       "Bash(vercel --version:*)",
       "Bash(node:*)",
       "Bash(find:*)",
-      "Bash(git -C \"c:\\\\Users\\\\thor4\\\\.claude\\\\projects\\\\Stackwise\" log --oneline -20)"
+      "Bash(git -C \"c:\\\\Users\\\\thor4\\\\.claude\\\\projects\\\\Stackwise\" log --oneline -20)",
+      "Bash(grep:*)"
     ]
   }
 }
