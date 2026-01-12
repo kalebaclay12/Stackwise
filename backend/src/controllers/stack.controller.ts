@@ -196,6 +196,29 @@ export const updateStack = async (req: AuthRequest, res: Response, next: NextFun
       updateData.autoAllocateNextDate = nextDate;
     }
 
+    // If auto-allocation is being enabled and we haven't set nextDate yet, calculate it
+    if (autoAllocate === true && !stack.autoAllocate && !updateData.autoAllocateNextDate) {
+      // Auto-allocation is being enabled - calculate next date
+      const frequency = autoAllocateFrequency || stack.autoAllocateFrequency;
+      const startDate = autoAllocateStartDate ? new Date(autoAllocateStartDate) : stack.autoAllocateStartDate;
+
+      if (frequency && startDate) {
+        const now = new Date();
+        if (startDate > now) {
+          updateData.autoAllocateNextDate = startDate;
+        } else {
+          let nextDate = startDate;
+          while (nextDate <= now) {
+            nextDate = calculateNextAllocationDate(
+              nextDate,
+              frequency as AllocationFrequency
+            );
+          }
+          updateData.autoAllocateNextDate = nextDate;
+        }
+      }
+    }
+
     // If auto-allocation is being disabled, clear the next date
     if (autoAllocate === false) {
       updateData.autoAllocateNextDate = null;

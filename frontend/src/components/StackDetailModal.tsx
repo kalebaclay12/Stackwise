@@ -196,14 +196,20 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
-                onClick={() => setShowAllocate(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAllocate(true);
+                }}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
               >
                 <ArrowUpCircle className="w-5 h-5" />
                 Add Money
               </button>
               <button
-                onClick={() => setShowDeallocate(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDeallocate(true);
+                }}
                 disabled={stack.currentAmount === 0}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >

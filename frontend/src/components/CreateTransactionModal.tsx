@@ -30,8 +30,8 @@ export default function CreateTransactionModal({ accountId, onClose }: CreateTra
     setIsLoading(true);
 
     try {
-      const api = (await import('../services/api')).default;
-      await api.post(`/transactions/${accountId}`, {
+      const { transactionAPI } = await import('../services/api');
+      await transactionAPI.create(accountId, {
         type,
         amount: parseFloat(amount),
         description,

@@ -69,7 +69,9 @@ export default function StackList({ accountId }: StackListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 15, // Increased distance to prevent accidental drags when selecting text
+        delay: 100, // Add small delay to distinguish drag from click/select
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
