@@ -24,15 +24,17 @@ import { Stack } from '../types';
 
 interface StackListProps {
   accountId: string;
+  disableDrag?: boolean;
 }
 
 interface SortableStackItemProps {
   stack: Stack;
   isDraggingAny: boolean;
   priorityLabel: string;
+  disableDrag?: boolean;
 }
 
-function SortableStackItem({ stack, isDraggingAny, priorityLabel }: SortableStackItemProps) {
+function SortableStackItem({ stack, isDraggingAny, priorityLabel, disableDrag }: SortableStackItemProps) {
   const {
     attributes,
     listeners,
@@ -40,13 +42,13 @@ function SortableStackItem({ stack, isDraggingAny, priorityLabel }: SortableStac
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: stack.id });
+  } = useSortable({ id: stack.id, disabled: disableDrag });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: isDraggingAny ? 'grabbing' : 'grab',
+    cursor: disableDrag ? 'default' : (isDraggingAny ? 'grabbing' : 'grab'),
   };
 
   return (
@@ -54,14 +56,14 @@ function SortableStackItem({ stack, isDraggingAny, priorityLabel }: SortableStac
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
+      {...(!disableDrag && listeners)}
     >
       <StackCard stack={stack} isDragging={isDragging} priorityLabel={priorityLabel} />
     </div>
   );
 }
 
-export default function StackList({ accountId }: StackListProps) {
+export default function StackList({ accountId, disableDrag = false }: StackListProps) {
   const { stacks, fetchStacks, updateStackPriorities } = useAccountStore();
   const accountStacks = stacks[accountId] || [];
   const [sortedStacks, setSortedStacks] = useState<Stack[]>([]);
@@ -164,6 +166,7 @@ export default function StackList({ accountId }: StackListProps) {
                   stack={stack}
                   isDraggingAny={isDraggingAny}
                   priorityLabel={priorityLabel}
+                  disableDrag={disableDrag}
                 />
               );
             })}
