@@ -223,6 +223,7 @@ export const transferFunds = async (req: AuthRequest, res: Response, next: NextF
           description: description || `Transfer from ${linkedBank.institutionName} ${linkedBank.accountMask ? `(...${linkedBank.accountMask})` : ''}`,
           category: 'Bank Transfer',
           balance: newBalance,
+          isVirtual: false, // Manual transfer represents real money movement
           metadata: JSON.stringify({
             linkedBankId,
             institutionName: linkedBank.institutionName,
@@ -487,6 +488,30 @@ export const syncTransactions = async (req: AuthRequest, res: Response, next: Ne
     }
   } catch (error: any) {
     console.error('Error syncing transactions:', error);
+    console.error('Error response:', error.response?.data);
+    next(error);
+  }
+};
+
+export const syncAllBanks = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { syncAllUserBanks } = await import('../services/bankSync.service');
+
+    console.log(`Syncing all banks for user: ${req.userId}`);
+
+    const result = await syncAllUserBanks(req.userId!, false); // false = respect caching
+
+    res.json({
+      message: `Synced ${result.synced} bank account(s)`,
+      totalBanks: result.totalBanks,
+      synced: result.synced,
+      skipped: result.skipped,
+      failed: result.failed,
+      newTransactions: result.totalNewTransactions,
+      results: result.results,
+    });
+  } catch (error: any) {
+    console.error('Error syncing all banks:', error);
     console.error('Error response:', error.response?.data);
     next(error);
   }
