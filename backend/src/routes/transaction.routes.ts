@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTransaction } from '../controllers/transaction.controller';
+import { createTransaction, deleteTransaction } from '../controllers/transaction.controller';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 import { z } from 'zod';
@@ -18,5 +18,6 @@ const createTransactionSchema = z.object({
 router.use(authenticate);
 
 router.post('/:accountId', validate(createTransactionSchema), createTransaction);
+router.delete('/:id', deleteTransaction);
 
 export default router;

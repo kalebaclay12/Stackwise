@@ -58,3 +58,40 @@ export const createTransaction = async (req: AuthRequest, res: Response, next: N
     next(error);
   }
 };
+
+export const deleteTransaction = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    // Find the transaction and verify ownership
+    const transaction = await prisma.transaction.findFirst({
+      where: { id },
+      include: { account: true },
+    });
+
+    if (!transaction || transaction.account.userId !== req.userId) {
+      return res.status(404).json({ message: 'Transaction not found' });
+    }
+
+    // Use a transaction to delete and update account balance
+    await prisma.$transaction(async (tx) => {
+      // Delete the transaction
+      await tx.transaction.delete({
+        where: { id },
+      });
+
+      // Update account balance (reverse the transaction)
+      await tx.account.update({
+        where: { id: transaction.accountId },
+        data: {
+          balance: { decrement: transaction.amount },
+          availableBalance: { decrement: transaction.amount },
+        },
+      });
+    });
+
+    res.json({ message: 'Transaction deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -22,8 +22,10 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ isOpen, onClose, accoun
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { importCSVTransactions } = useAccountStore();
+  const { importCSVTransactions} = useAccountStore();
 
   if (!isOpen) return null;
 
@@ -136,10 +138,25 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ isOpen, onClose, accoun
     setSuccess(null);
 
     try {
-      const transactions = await parseCSV(file);
+      let transactions = await parseCSV(file);
 
       if (transactions.length === 0) {
         throw new Error('No valid transactions found in CSV');
+      }
+
+      // Filter transactions by date range if specified
+      if (startDate || endDate) {
+        const start = startDate ? new Date(startDate) : new Date('1900-01-01');
+        const end = endDate ? new Date(endDate) : new Date('2100-12-31');
+
+        transactions = transactions.filter(txn => {
+          const txnDate = new Date(txn.date);
+          return txnDate >= start && txnDate <= end;
+        });
+
+        if (transactions.length === 0) {
+          throw new Error('No transactions found in the selected date range');
+        }
       }
 
       await importCSVTransactions(accountId, transactions);
@@ -260,6 +277,51 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({ isOpen, onClose, accoun
             <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start">
               <CheckCircle className="text-green-500 mr-3 flex-shrink-0 mt-0.5" size={20} />
               <p className="text-sm text-green-800">{success}</p>
+            </div>
+          )}
+
+          {/* Date Range Filter */}
+          {file && (
+            <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Date Range (Optional)</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Filter which transactions to import by date
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    From Date
+                  </label>
+                  <input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    To Date
+                  </label>
+                  <input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              {(startDate || endDate) && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {startDate && endDate
+                    ? `Importing transactions from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`
+                    : startDate
+                    ? `Importing transactions from ${new Date(startDate).toLocaleDateString()} onwards`
+                    : `Importing transactions up to ${new Date(endDate).toLocaleDateString()}`}
+                </p>
+              )}
             </div>
           )}
 

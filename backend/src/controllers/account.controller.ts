@@ -219,11 +219,12 @@ export const importCSVTransactions = async (req: AuthRequest, res: Response, nex
         }
 
         // Create transaction
+        // Use 'withdrawal' for negative amounts (debits) and 'deposit' for positive amounts (credits)
         await prisma.transaction.create({
           data: {
             accountId: id,
-            type: amount < 0 ? 'debit' : 'credit',
-            amount: Math.abs(amount),
+            type: amount < 0 ? 'withdrawal' : 'deposit',
+            amount: amount, // Keep the sign (negative for withdrawals, positive for deposits)
             description,
             category: category || 'Uncategorized',
             date: txnDate,
