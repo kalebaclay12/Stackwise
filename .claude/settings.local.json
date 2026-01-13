@@ -43,7 +43,11 @@
       "Bash(find:*)",
       "Bash(git -C \"c:\\\\Users\\\\thor4\\\\.claude\\\\projects\\\\Stackwise\" log --oneline -20)",
       "Bash(grep:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(npm run deploy:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(npx firebase deploy:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

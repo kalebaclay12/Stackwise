@@ -67,10 +67,10 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
             : 'border-transparent hover:border-primary-200 dark:hover:border-primary-800'
         }`}
       >
-        <div className="space-y-2 sm:space-y-3">
+        <div className="space-y-1.5 sm:space-y-2">
           {priorityLabel && (
             <div className="flex items-center">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 sm:py-1 rounded">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
                 {priorityLabel}
               </span>
             </div>
@@ -80,17 +80,17 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
             <div
               {...dragHandleProps}
               onClick={(e) => e.stopPropagation()}
-              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none flex items-center justify-center min-w-[44px] min-h-[44px] -ml-3 -mt-1"
+              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none flex items-center justify-center min-w-[40px] min-h-[40px] sm:min-w-[44px] sm:min-h-[44px] -ml-2 sm:-ml-3 -mt-1"
               title="Drag to reorder"
             >
-              <GripVertical className="w-6 h-6 md:w-5 md:h-5 text-gray-400 dark:text-gray-500" />
+              <GripVertical className="w-5 h-5 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-1">
               <div
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 relative flex-shrink-0"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 relative flex-shrink-0"
                 style={{ backgroundColor: stack.color + '20' }}
               >
-                <span className="text-xl sm:text-2xl">{stack.icon}</span>
+                <span className="text-lg sm:text-xl">{stack.icon}</span>
                 {stack.isCompleted && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full flex items-center justify-center">
                     <CheckCircle2 className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-white" />
@@ -151,7 +151,7 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
           </div>
 
           <div>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+            <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(stack.currentAmount)}
             </p>
           </div>
@@ -166,9 +166,9 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
                   {progressPercent.toFixed(0)}%
                 </p>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 sm:h-1.5">
                 <div
-                  className="h-1.5 rounded-full transition-all duration-500"
+                  className="h-1 sm:h-1.5 rounded-full transition-all duration-500"
                   style={{
                     width: `${progressPercent}%`,
                     backgroundColor: stack.color,

@@ -119,33 +119,33 @@ export default function AccountCard({ account, isSelected, onClick, onEdit, onDe
       )}
 
       {/* Gradient Background */}
-      <div className={`${defaultGradientClass} p-6 text-white`} style={getGradientStyle()}>
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+      <div className={`${defaultGradientClass} p-4 sm:p-6 text-white`} style={getGradientStyle()}>
+        <div className="flex items-start justify-between mb-3 sm:mb-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0">
               {account.type === 'checking' ? (
-                <Wallet className="w-6 h-6 text-white" />
+                <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               ) : (
-                <TrendingUp className="w-6 h-6 text-white" />
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               )}
             </div>
-            <div>
-              <h3 className="font-semibold text-white">{account.name}</h3>
-              <p className="text-sm text-white/80 capitalize">{account.type}</p>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-white text-sm sm:text-base truncate">{account.name}</h3>
+              <p className="text-xs sm:text-sm text-white/80 capitalize">{account.type}</p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <div>
-            <p className="text-sm text-white/80">Available</p>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-xs sm:text-sm text-white/80">Available</p>
+            <p className="text-2xl sm:text-3xl font-bold text-white">
               {formatCurrency(account.availableBalance)}
             </p>
           </div>
-          <div className="pt-3 border-t border-white/20">
-            <p className="text-sm text-white/80">Total Balance</p>
-            <p className="text-xl font-semibold text-white">
+          <div className="pt-2 sm:pt-3 border-t border-white/20">
+            <p className="text-xs sm:text-sm text-white/80">Total Balance</p>
+            <p className="text-lg sm:text-xl font-semibold text-white">
               {formatCurrency(account.balance)}
             </p>
           </div>

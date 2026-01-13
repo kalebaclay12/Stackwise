@@ -141,22 +141,22 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
-      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">S</span>
+      <nav className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 transition-colors shadow-sm">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-base sm:text-lg">S</span>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Stackwise</h1>
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Stackwise</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Modern Banking</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 sm:gap-3">
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 sm:p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
               >
                 {theme === 'light' ? (
@@ -171,18 +171,18 @@ export default function DashboardPage() {
               <div className="relative">
                 <button
                   onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <User className="w-4 h-4 text-white" />
                   </div>
-                  <div className="text-left">
+                  <div className="text-left hidden md:block">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {user?.firstName} {user?.lastName}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform ${showSettingsDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform ${showSettingsDropdown ? 'rotate-180' : ''} hidden sm:block`} />
                 </button>
 
                 {showSettingsDropdown && (
@@ -256,7 +256,7 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {showBankSection && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
