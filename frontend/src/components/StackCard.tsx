@@ -67,39 +67,39 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
             : 'border-transparent hover:border-primary-200 dark:hover:border-primary-800'
         }`}
       >
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {priorityLabel && (
             <div className="flex items-center">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 sm:py-1 rounded">
                 {priorityLabel}
               </span>
             </div>
           )}
           <div className="flex items-start justify-between">
-            {/* Drag Handle - only visible on hover */}
+            {/* Drag Handle - always visible on mobile (opacity-100), hidden on desktop until hover */}
             <div
               {...dragHandleProps}
               onClick={(e) => e.stopPropagation()}
-              className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 -ml-2 mr-1"
+              className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none flex items-center justify-center min-w-[44px] min-h-[44px] -ml-3 -mt-1"
               title="Drag to reorder"
             >
-              <GripVertical className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <GripVertical className="w-6 h-6 md:w-5 md:h-5 text-gray-400 dark:text-gray-500" />
             </div>
-            <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1">
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 relative"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 relative flex-shrink-0"
                 style={{ backgroundColor: stack.color + '20' }}
               >
-                <span className="text-2xl">{stack.icon}</span>
+                <span className="text-xl sm:text-2xl">{stack.icon}</span>
                 {stack.isCompleted && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-white" />
                   </div>
                 )}
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">
                     {stack.name}
                   </h3>
                   {stack.isCompleted && (
@@ -110,12 +110,12 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
                 </div>
               </div>
             </div>
-            <div className="relative flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <div className="relative flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="p-1.5 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
-                <MoreVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <MoreVertical className="w-5 h-5 sm:w-4 sm:h-4 text-gray-400 dark:text-gray-500" />
               </button>
               {showMenu && (
                 <>
@@ -151,13 +151,13 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
           </div>
 
           <div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+            <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(stack.currentAmount)}
             </p>
           </div>
 
           {stack.targetAmount && (
-            <div className="space-y-1">
+            <div className="space-y-0.5 sm:space-y-1">
               <div className="flex justify-between items-center">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {formatCurrency(stack.targetAmount)} goal
