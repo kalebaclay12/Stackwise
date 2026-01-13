@@ -1,6 +1,7 @@
 import prisma from '../utils/prisma';
 import { calculateNextAllocationDate, AllocationFrequency } from '../utils/dateCalculator';
 import stackCompletionService from './stackCompletion.service';
+import { createNotification } from '../controllers/notification.controller';
 
 export async function processPendingAllocations() {
   try {
@@ -48,6 +49,15 @@ export async function processPendingAllocations() {
           console.warn(
             `Insufficient balance in account ${stack.accountId} for stack ${stack.id}. ` +
             `Required: ${stack.autoAllocateAmount}, Available: ${account.availableBalance}`
+          );
+
+          // Create notification for insufficient balance
+          await createNotification(
+            stack.account.userId,
+            'allocation_skipped',
+            'Auto-allocation skipped',
+            `Couldn't auto-allocate $${stack.autoAllocateAmount.toFixed(2)} to "${stack.name}" - insufficient available balance ($${account.availableBalance.toFixed(2)} available).`,
+            { stackId: stack.id, stackName: stack.name, amountNeeded: stack.autoAllocateAmount }
           );
 
           // Calculate next date even if we skip this allocation
@@ -175,6 +185,21 @@ export async function processPendingAllocations() {
               await stackCompletionService.checkAndMarkCompleted(currentStack.id);
               await stackCompletionService.checkAndMarkCompleted(nextStack.id);
 
+              // Create notification for overflow allocation
+              await createNotification(
+                stack.account.userId,
+                'stack_overflow',
+                `${currentStack.name} reached its goal!`,
+                `Auto-allocated $${amountToAllocate.toFixed(2)} to "${currentStack.name}" (goal reached). $${overflowAmount.toFixed(2)} overflow sent to "${nextStack.name}".`,
+                {
+                  stackId: currentStack.id,
+                  stackName: currentStack.name,
+                  nextStackId: nextStack.id,
+                  nextStackName: nextStack.name,
+                  overflowAmount
+                }
+              );
+
               console.log(
                 `Successfully allocated $${amountToAllocate.toFixed(2)} to "${currentStack.name}" ` +
                 `and $${overflowAmount.toFixed(2)} overflow to "${nextStack.name}"`
@@ -224,6 +249,20 @@ export async function processPendingAllocations() {
 
               overflowHandled = true;
               await stackCompletionService.checkAndMarkCompleted(currentStack.id);
+
+              // Create notification for overflow to available balance
+              await createNotification(
+                stack.account.userId,
+                'stack_overflow',
+                `${currentStack.name} reached its goal!`,
+                `Auto-allocated $${amountToAllocate.toFixed(2)} to "${currentStack.name}" (goal reached). $${overflowAmount.toFixed(2)} returned to available balance.`,
+                {
+                  stackId: currentStack.id,
+                  stackName: currentStack.name,
+                  overflowAmount,
+                  overflowToBalance: true
+                }
+              );
 
               console.log(
                 `Successfully allocated $${amountToAllocate.toFixed(2)} to "${currentStack.name}" ` +
@@ -283,6 +322,25 @@ export async function processPendingAllocations() {
 
           // Check if stack is completed after allocation
           await stackCompletionService.checkAndMarkCompleted(currentStack.id);
+
+          // Get updated stack data for notification
+          const updatedStack = await prisma.stack.findUnique({
+            where: { id: currentStack.id },
+          });
+
+          // Create notification for successful allocation
+          await createNotification(
+            stack.account.userId,
+            'auto_allocation_completed',
+            'Auto-allocation successful',
+            `Auto-allocated $${stack.autoAllocateAmount?.toFixed(2)} to "${currentStack.name}". New total: $${updatedStack?.currentAmount.toFixed(2)}.`,
+            {
+              stackId: currentStack.id,
+              stackName: currentStack.name,
+              amount: stack.autoAllocateAmount,
+              newTotal: updatedStack?.currentAmount
+            }
+          );
 
           console.log(
             `Successfully allocated $${stack.autoAllocateAmount} to stack "${currentStack.name}" (${currentStack.id})`

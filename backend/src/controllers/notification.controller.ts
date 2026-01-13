@@ -103,7 +103,7 @@ export const deleteNotification = async (req: AuthRequest, res: Response, next: 
   }
 };
 
-// Helper function to create notifications (can be called from other services)
+// Helper function to create notifications with auto-cleanup (can be called from other services)
 export const createNotification = async (
   userId: string,
   type: string,
@@ -112,7 +112,8 @@ export const createNotification = async (
   data?: any,
   actionUrl?: string
 ) => {
-  return await prisma.notification.create({
+  // Create the new notification
+  const notification = await prisma.notification.create({
     data: {
       userId,
       type,
@@ -122,4 +123,24 @@ export const createNotification = async (
       actionUrl,
     },
   });
+
+  // Auto-cleanup: Keep only the 10 most recent notifications per user
+  const allUserNotifications = await prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  // If user has more than 10 notifications, delete the oldest ones
+  if (allUserNotifications.length > 10) {
+    const notificationsToDelete = allUserNotifications.slice(10);
+    const idsToDelete = notificationsToDelete.map(n => n.id);
+
+    await prisma.notification.deleteMany({
+      where: {
+        id: { in: idsToDelete },
+      },
+    });
+  }
+
+  return notification;
 };

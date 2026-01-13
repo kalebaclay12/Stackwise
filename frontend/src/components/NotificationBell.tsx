@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Check, Trash2, RefreshCw, CheckCircle, Calendar, Link, Zap } from 'lucide-react';
+import { Bell, Check, Trash2, RefreshCw, CheckCircle, Calendar, Link, Zap, TrendingUp, ArrowRightLeft, AlertCircle } from 'lucide-react';
 import { notificationAPI, Notification } from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -111,6 +111,12 @@ export default function NotificationBell() {
     switch (type) {
       case 'stack_reset_pending':
         return <RefreshCw className="w-5 h-5" />;
+      case 'auto_allocation_completed':
+        return <TrendingUp className="w-5 h-5" />;
+      case 'stack_overflow':
+        return <ArrowRightLeft className="w-5 h-5" />;
+      case 'allocation_skipped':
+        return <AlertCircle className="w-5 h-5" />;
       case 'stack_completed':
         return <CheckCircle className="w-5 h-5" />;
       case 'stack_due_soon':
@@ -127,6 +133,9 @@ export default function NotificationBell() {
   const getNotificationColor = (type: string) => {
     const colors: Record<string, string> = {
       stack_reset_pending: 'from-orange-500 to-amber-500',
+      auto_allocation_completed: 'from-blue-500 to-cyan-500',
+      stack_overflow: 'from-purple-500 to-indigo-500',
+      allocation_skipped: 'from-yellow-500 to-orange-500',
       stack_completed: 'from-green-500 to-emerald-500',
       stack_due_soon: 'from-yellow-500 to-orange-500',
       bank_synced: 'from-blue-500 to-indigo-500',
