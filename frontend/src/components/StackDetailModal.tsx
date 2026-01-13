@@ -56,17 +56,22 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
     }).format(amount);
   };
 
-  // Calculate payment amounts for bi-weekly payments if due date is set
+  // Calculate payment amounts based on auto-allocation frequency if due date is set
   const paymentCalculation = useMemo(() => {
     if (!stack.targetAmount || !stack.targetDueDate) return null;
+
+    // Use the stack's auto-allocation frequency, or default to bi-weekly if not set
+    const frequency = stack.autoAllocate && stack.autoAllocateFrequency
+      ? stack.autoAllocateFrequency
+      : 'bi_weekly';
 
     return calculatePaymentAmount(
       stack.targetAmount,
       stack.currentAmount,
       new Date(stack.targetDueDate),
-      'bi_weekly' // Default to bi-weekly for display
+      frequency
     );
-  }, [stack.targetAmount, stack.currentAmount, stack.targetDueDate]);
+  }, [stack.targetAmount, stack.currentAmount, stack.targetDueDate, stack.autoAllocate, stack.autoAllocateFrequency]);
 
   const formatNextAllocationDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -211,7 +216,7 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
                           {formatDaysUntilDue(paymentCalculation.daysUntilDue)}
                         </p>
                         <p className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-1">
-                          {formatCurrency(paymentCalculation.amountPerPayment)} per bi-weekly payment
+                          {formatCurrency(paymentCalculation.amountPerPayment)} per {getFrequencyLabel(stack.autoAllocate && stack.autoAllocateFrequency ? stack.autoAllocateFrequency : 'bi_weekly').toLowerCase()} payment
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           {paymentCalculation.paymentsRemaining} payment{paymentCalculation.paymentsRemaining !== 1 ? 's' : ''} remaining to reach your goal
