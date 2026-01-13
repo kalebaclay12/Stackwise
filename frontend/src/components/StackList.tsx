@@ -32,9 +32,10 @@ interface SortableStackItemProps {
   isDraggingAny: boolean;
   priorityLabel: string;
   disableDrag?: boolean;
+  onModalChange?: (isOpen: boolean) => void;
 }
 
-function SortableStackItem({ stack, isDraggingAny, priorityLabel, disableDrag }: SortableStackItemProps) {
+function SortableStackItem({ stack, isDraggingAny, priorityLabel, disableDrag, onModalChange }: SortableStackItemProps) {
   const {
     attributes,
     listeners,
@@ -58,7 +59,12 @@ function SortableStackItem({ stack, isDraggingAny, priorityLabel, disableDrag }:
       {...attributes}
       {...(!disableDrag && listeners)}
     >
-      <StackCard stack={stack} isDragging={isDragging} priorityLabel={priorityLabel} />
+      <StackCard
+        stack={stack}
+        isDragging={isDragging}
+        priorityLabel={priorityLabel}
+        onModalChange={onModalChange}
+      />
     </div>
   );
 }
@@ -68,8 +74,11 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
   const accountStacks = stacks[accountId] || [];
   const [sortedStacks, setSortedStacks] = useState<Stack[]>([]);
   const [isDraggingAny, setIsDraggingAny] = useState(false);
+  const [openModalsCount, setOpenModalsCount] = useState(0);
 
-  // Only activate sensors when dragging is enabled
+  // Disable drag if parent says so OR if any modal is open
+  const shouldDisableDrag = disableDrag || openModalsCount > 0;
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -77,18 +86,15 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
         delay: 100, // Add small delay to distinguish drag from click/select
         tolerance: 5,
       },
-      disabled: disableDrag,
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
         delay: 250, // Longer delay for touch to prevent accidental drags on mobile
         tolerance: 8, // More tolerance for touch input
       },
-      disabled: disableDrag,
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-      disabled: disableDrag,
     })
   );
 
@@ -99,6 +105,10 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
   useEffect(() => {
     setSortedStacks([...accountStacks].sort((a, b) => a.priority - b.priority));
   }, [accountStacks]);
+
+  const handleModalChange = (isOpen: boolean) => {
+    setOpenModalsCount(prev => isOpen ? prev + 1 : Math.max(0, prev - 1));
+  };
 
   const handleDragStart = () => {
     setIsDraggingAny(true);
@@ -139,6 +149,41 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
     );
   }
 
+  // When drag is disabled (modals are open), render stacks without DndContext
+  if (shouldDisableDrag) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sortedStacks.map((stack, index) => {
+            const priority = index + 1;
+            let priorityLabel: string;
+
+            if (priority === 1) {
+              priorityLabel = '1st Priority';
+            } else if (priority === 2) {
+              priorityLabel = '2nd Priority';
+            } else if (priority === 3) {
+              priorityLabel = '3rd Priority';
+            } else {
+              priorityLabel = `${priority}th Priority`;
+            }
+
+            return (
+              <div key={stack.id}>
+                <StackCard
+                  stack={stack}
+                  isDragging={false}
+                  priorityLabel={priorityLabel}
+                  onModalChange={handleModalChange}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Stack Grid with Drag and Drop */}
@@ -171,6 +216,7 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
                   isDraggingAny={isDraggingAny}
                   priorityLabel={priorityLabel}
                   disableDrag={disableDrag}
+                  onModalChange={handleModalChange}
                 />
               );
             })}

@@ -15,9 +15,10 @@ interface StackCardProps {
   stack: Stack;
   isDragging?: boolean;
   priorityLabel?: string;
+  onModalChange?: (isOpen: boolean) => void;
 }
 
-export default function StackCard({ stack, isDragging, priorityLabel }: StackCardProps) {
+export default function StackCard({ stack, isDragging, priorityLabel, onModalChange }: StackCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -30,6 +31,14 @@ export default function StackCard({ stack, isDragging, priorityLabel }: StackCar
       setShowCompletion(true);
     }
   }, [stack.isCompleted, stack.pendingReset]);
+
+  // Notify parent when any modal opens or closes
+  useEffect(() => {
+    const anyModalOpen = showDetail || showEdit || showCompletion;
+    if (onModalChange) {
+      onModalChange(anyModalOpen);
+    }
+  }, [showDetail, showEdit, showCompletion, onModalChange]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
