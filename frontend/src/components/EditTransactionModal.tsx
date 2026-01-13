@@ -3,19 +3,22 @@ import { useAccountStore } from '../store/accountStore';
 import { X, DollarSign, FileText, Tag, Calendar } from 'lucide-react';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { format } from 'date-fns';
+import { Transaction } from '../types';
 
-interface CreateTransactionModalProps {
-  accountId: string;
+interface EditTransactionModalProps {
+  transaction: Transaction;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-export default function CreateTransactionModal({ accountId, onClose, onSuccess }: CreateTransactionModalProps) {
-  const [type, setType] = useState<'deposit' | 'withdrawal'>('deposit');
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+export default function EditTransactionModal({ transaction, onClose, onSuccess }: EditTransactionModalProps) {
+  const [type, setType] = useState<'deposit' | 'withdrawal'>(
+    transaction.amount >= 0 ? 'deposit' : 'withdrawal'
+  );
+  const [amount, setAmount] = useState(Math.abs(transaction.amount).toString());
+  const [description, setDescription] = useState(transaction.description);
+  const [category, setCategory] = useState(transaction.category || '');
+  const [date, setDate] = useState(format(new Date(transaction.date), 'yyyy-MM-dd'));
   const [isLoading, setIsLoading] = useState(false);
   const { refreshCurrentAccount } = useAccountStore();
   const descriptionInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +37,7 @@ export default function CreateTransactionModal({ accountId, onClose, onSuccess }
 
     try {
       const { transactionAPI } = await import('../services/api');
-      await transactionAPI.create(accountId, {
+      await transactionAPI.update(transaction.id, {
         type,
         amount: parseFloat(amount),
         description,
@@ -48,8 +51,8 @@ export default function CreateTransactionModal({ accountId, onClose, onSuccess }
       }
       onClose();
     } catch (error) {
-      console.error('Create transaction error:', error);
-      alert('Failed to create transaction');
+      console.error('Update transaction error:', error);
+      alert('Failed to update transaction');
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +67,7 @@ export default function CreateTransactionModal({ accountId, onClose, onSuccess }
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <DollarSign className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Add Transaction</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Transaction</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
             <X className="w-5 h-5 text-gray-900 dark:text-white" />
@@ -195,7 +198,7 @@ export default function CreateTransactionModal({ accountId, onClose, onSuccess }
               className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isLoading}
             >
-              {isLoading ? 'Adding...' : 'Add Transaction'}
+              {isLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

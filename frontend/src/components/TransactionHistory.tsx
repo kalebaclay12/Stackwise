@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { Transaction } from '../types';
 import { transactionAPI, transactionMatcherAPI } from '../services/api';
-import { ArrowUpCircle, ArrowDownCircle, ArrowLeftRight, Layers, ChevronsDown, ChevronsUp, ChevronLeft, ChevronRight, X, MoreVertical, Trash2 } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, ArrowLeftRight, Layers, ChevronsDown, ChevronsUp, ChevronLeft, ChevronRight, X, MoreVertical, Trash2, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAccountStore } from '../store/accountStore';
 import { useClickOutside } from '../hooks/useClickOutside';
+import EditTransactionModal from './EditTransactionModal';
 
 interface TransactionHistoryProps {
   accountId?: string;
@@ -18,6 +19,7 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { refreshCurrentAccount } = useAccountStore();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE_COLLAPSED = 5;
@@ -147,6 +149,27 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
     if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
     }
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setOpenDropdownId(null);
+  };
+
+  const handleEditSuccess = async () => {
+    // Refresh transactions
+    const fetchTransactions = async () => {
+      let response;
+      if (accountId) {
+        response = await transactionAPI.getByAccount(accountId, { limit: 100 });
+      } else if (stackId) {
+        response = await transactionAPI.getByStack(stackId, { limit: 100 });
+      }
+      if (response) {
+        setTransactions(response.data);
+      }
+    };
+    await fetchTransactions();
   };
 
   const handleUnmatch = async (transactionId: string) => {
@@ -292,6 +315,15 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
                     className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
                     onClick={(e) => e.stopPropagation()}
                   >
+                    {!transaction.isVirtual && transaction.type !== 'allocation' && (
+                      <button
+                        onClick={() => handleEditTransaction(transaction)}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-gray-700 dark:text-gray-300"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>Edit Transaction</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDeleteTransaction(transaction.id)}
                       className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-red-600 dark:text-red-400"
@@ -329,6 +361,14 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+      )}
+
+      {editingTransaction && (
+        <EditTransactionModal
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onSuccess={handleEditSuccess}
+        />
       )}
     </div>
   );

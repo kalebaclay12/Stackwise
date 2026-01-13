@@ -115,6 +115,9 @@ export const transactionAPI = {
   create: (accountId: string, data: Partial<Transaction>) =>
     api.post<Transaction>(`/accounts/${accountId}/transactions`, data),
 
+  update: (transactionId: string, data: Partial<Transaction>) =>
+    api.put<Transaction>(`/transactions/${transactionId}`, data),
+
   delete: (transactionId: string) =>
     api.delete(`/transactions/${transactionId}`),
 };

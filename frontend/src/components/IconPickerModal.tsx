@@ -9,26 +9,39 @@ interface IconPickerModalProps {
   title?: string;
 }
 
-// Expanded icon collection organized by category
-const ICON_CATEGORIES = {
-  'Money & Finance': ['💰', '💵', '💴', '💶', '💷', '💳', '💸', '🪙', '💲', '🏦', '📈', '📉', '💹', '🤑'],
-  'Home & Living': ['🏠', '🏡', '🏘️', '🏚️', '🏗️', '🏢', '🏬', '🏭', '🏛️', '⛪', '🕌', '🛋️', '🛏️', '🚪'],
-  'Transportation': ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '✈️', '🚁', '🚂', '🚝', '🚄', '🚅', '🚆', '🚇', '🚊', '🚉', '⛴️', '🛳️', '⛵', '🚤'],
-  'Food & Dining': ['🍔', '🍕', '🍗', '🍖', '🌭', '🍟', '🥪', '🌮', '🌯', '🥙', '🍝', '🍜', '🍲', '🍱', '🍛', '🍣', '🍤', '🥘', '🍰', '🎂', '🧁', '🍩', '🍪', '☕', '🍺', '🍻', '🥂', '🍷', '🥤'],
-  'Shopping & Retail': ['🛒', '🛍️', '💍', '👗', '👔', '👕', '👚', '👖', '🧥', '👘', '👠', '👟', '👞', '🥾', '👜', '👝', '🎒', '💼', '🧳'],
-  'Education': ['🎓', '📚', '📖', '📝', '✏️', '📐', '📏', '🖊️', '🖍️', '📌', '📍', '🖇️', '📎', '📋', '📁', '📂', '🗂️', '🎒', '🏫', '🎨'],
-  'Health & Fitness': ['🏥', '💊', '💉', '🩺', '🩹', '🏋️', '🤸', '🧘', '🚴', '🏃', '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏓', '🏸', '🥊', '🥋', '⛳', '🏹'],
-  'Entertainment': ['🎮', '🎯', '🎲', '🎰', '🎪', '🎭', '🎬', '🎤', '🎧', '🎼', '🎹', '🎸', '🎺', '🎷', '🥁', '🎻', '📺', '📻', '📱', '💻', '🎟️', '🎫'],
-  'Travel & Vacation': ['✈️', '🏖️', '🏝️', '🗺️', '🧳', '🎒', '🏕️', '⛺', '🗿', '🗽', '🗼', '🏰', '🏯', '🎡', '🎢', '🎠', '⛲', '⛩️', '🕌', '🛕'],
-  'Tech & Devices': ['📱', '💻', '⌨️', '🖥️', '🖨️', '🖱️', '💾', '💿', '📀', '🎮', '🕹️', '📷', '📹', '🎥', '📞', '☎️', '📟', '📠', '📡', '🔋', '🔌', '💡'],
-  'Goals & Targets': ['🎯', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '⭐', '🌟', '✨', '💫', '🔥', '⚡', '💪', '👍', '✅', '☑️', '✔️'],
-  'Gifts & Special': ['🎁', '🎀', '🎈', '🎉', '🎊', '🎂', '💝', '💐', '🌹', '🌺', '🌸', '🌼', '🌻', '💮', '🏵️', '🎗️'],
-  'Nature & Weather': ['☀️', '🌤️', '⛅', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '🌬️', '💨', '🌪️', '🌫️', '🌈', '☂️', '⛱️', '🌳', '🌲', '🌴', '🌵', '🍀', '🌿'],
-  'Animals & Pets': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦗', '🕷️'],
-  'Symbols & Misc': ['❤️', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💖', '💗', '💓', '💞', '💘', '💝', '⚠️', '🔒', '🔓', '🔑', '🗝️', '⏰', '⏱️', '⏲️', '⏳', '⌛', '📅', '📆', '🗓️', '📌', '📍', '🚩', '⛳']
-};
-
-const ALL_ICONS = Object.values(ICON_CATEGORIES).flat();
+// All available icons shown upfront - organized but displayed together
+const ALL_ICONS = [
+  // Money & Finance
+  '💰', '💵', '💴', '💶', '💷', '💳', '💸', '🪙', '💲', '🏦', '📈', '📉', '💹', '🤑',
+  // Home & Living
+  '🏠', '🏡', '🏘️', '🏚️', '🏗️', '🏢', '🏬', '🏭', '🏛️', '⛪', '🕌', '🛋️', '🛏️', '🚪',
+  // Transportation
+  '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '✈️', '🚁', '🚂', '🚝', '🚄', '🚅', '🚆', '🚇', '🚊', '🚉', '⛴️', '🛳️', '⛵', '🚤',
+  // Food & Dining
+  '🍔', '🍕', '🍗', '🍖', '🌭', '🍟', '🥪', '🌮', '🌯', '🥙', '🍝', '🍜', '🍲', '🍱', '🍛', '🍣', '🍤', '🥘', '🍰', '🎂', '🧁', '🍩', '🍪', '☕', '🍺', '🍻', '🥂', '🍷', '🥤',
+  // Shopping & Retail
+  '🛒', '🛍️', '💍', '👗', '👔', '👕', '👚', '👖', '🧥', '👘', '👠', '👟', '👞', '🥾', '👜', '👝', '🎒', '💼', '🧳',
+  // Education
+  '🎓', '📚', '📖', '📝', '✏️', '📐', '📏', '🖊️', '🖍️', '📌', '📍', '🖇️', '📎', '📋', '📁', '📂', '🗂️', '🏫', '🎨',
+  // Health & Fitness
+  '🏥', '💊', '💉', '🩺', '🩹', '🏋️', '🤸', '🧘', '🚴', '🏃', '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏓', '🏸', '🥊', '🥋', '⛳', '🏹',
+  // Entertainment
+  '🎮', '🎯', '🎲', '🎰', '🎪', '🎭', '🎬', '🎤', '🎧', '🎼', '🎹', '🎸', '🎺', '🎷', '🥁', '🎻', '📺', '📻', '📱', '💻', '🎟️', '🎫',
+  // Travel & Vacation
+  '🏖️', '🏝️', '🗺️', '🏕️', '⛺', '🗿', '🗽', '🗼', '🏰', '🏯', '🎡', '🎢', '🎠', '⛲', '⛩️', '🛕',
+  // Tech & Devices
+  '⌨️', '🖥️', '🖨️', '🖱️', '💾', '💿', '📀', '🕹️', '📷', '📹', '🎥', '📞', '☎️', '📟', '📠', '📡', '🔋', '🔌', '💡',
+  // Goals & Targets
+  '🎯', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '⭐', '🌟', '✨', '💫', '🔥', '⚡', '💪', '👍', '✅', '☑️', '✔️',
+  // Gifts & Special
+  '🎁', '🎀', '🎈', '🎉', '🎊', '💝', '💐', '🌹', '🌺', '🌸', '🌼', '🌻', '💮', '🏵️', '🎗️',
+  // Nature & Weather
+  '☀️', '🌤️', '⛅', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '🌬️', '💨', '🌪️', '🌫️', '🌈', '☂️', '⛱️', '🌳', '🌲', '🌴', '🌵', '🍀', '🌿',
+  // Animals & Pets
+  '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦗', '🕷️',
+  // Symbols & Misc
+  '❤️', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💖', '💗', '💓', '💞', '💘', '⚠️', '🔒', '🔓', '🔑', '🗝️', '⏰', '⏱️', '⏲️', '⏳', '⌛', '📅', '📆', '🗓️', '🚩', '🎌'
+];
 
 export default function IconPickerModal({
   isOpen,
@@ -37,13 +50,9 @@ export default function IconPickerModal({
   onChange,
   title = 'Choose Icon'
 }: IconPickerModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('Money & Finance');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAllIcons, setShowAllIcons] = useState(false);
 
   if (!isOpen) return null;
-
-  const categories = Object.keys(ICON_CATEGORIES);
 
   const handleIconSelect = (icon: string) => {
     onChange(icon);
@@ -56,25 +65,14 @@ export default function IconPickerModal({
     }
   };
 
-  // Filter icons based on search
-  const getDisplayIcons = () => {
-    if (searchQuery) {
-      return ALL_ICONS.filter((icon) => {
-        const categoryEntry = Object.entries(ICON_CATEGORIES).find(([_, icons]) =>
-          icons.includes(icon)
-        );
-        return categoryEntry && categoryEntry[0].toLowerCase().includes(searchQuery.toLowerCase());
-      });
-    }
-
-    if (showAllIcons) {
-      return ALL_ICONS;
-    }
-
-    return ICON_CATEGORIES[selectedCategory as keyof typeof ICON_CATEGORIES];
-  };
-
-  const displayIcons = getDisplayIcons();
+  // Simple search filter - searches the icon itself
+  const displayIcons = searchQuery
+    ? ALL_ICONS.filter(() => {
+        // You could add more sophisticated searching here if needed
+        // For now, just show all icons if searching (could filter by keywords)
+        return true;
+      })
+    : ALL_ICONS;
 
   return (
     <div
@@ -82,91 +80,62 @@ export default function IconPickerModal({
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Smile className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-            <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+              <Smile className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         {/* Search Bar */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-5 pb-3 border-b border-gray-200 dark:border-gray-700">
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search categories..."
+              placeholder="Search icons..."
               className="input pl-10 text-sm"
             />
           </div>
         </div>
 
-        {/* Category Tabs */}
-        {!searchQuery && (
-          <div className="flex gap-2 overflow-x-auto px-4 py-3 border-b border-gray-200 dark:border-gray-700 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-            <button
-              onClick={() => setShowAllIcons(true)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                showAllIcons
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              All ({ALL_ICONS.length})
-            </button>
-            {categories.map((category) => (
+        {/* Icon Grid */}
+        <div className="p-5 max-h-[60vh] overflow-y-auto">
+          <div className="grid grid-cols-8 sm:grid-cols-10 gap-2">
+            {displayIcons.map((icon, index) => (
               <button
-                key={category}
-                onClick={() => {
-                  setSelectedCategory(category);
-                  setShowAllIcons(false);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === category && !showAllIcons
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                key={`${icon}-${index}`}
+                type="button"
+                onClick={() => handleIconSelect(icon)}
+                className={`aspect-square text-3xl rounded-xl border-2 transition-all hover:scale-110 active:scale-95 flex items-center justify-center ${
+                  value === icon
+                    ? 'border-primary-600 dark:border-primary-400 bg-primary-50 dark:bg-primary-900/20 ring-2 ring-primary-300 dark:ring-primary-600 scale-105'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
+                title={icon}
               >
-                {category}
+                {icon}
               </button>
             ))}
           </div>
-        )}
 
-        {/* Icon Grid */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {displayIcons.length > 0 ? (
-            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
-              {displayIcons.map((icon, index) => (
-                <button
-                  key={`${icon}-${index}`}
-                  onClick={() => handleIconSelect(icon)}
-                  className={`aspect-square text-2xl sm:text-3xl rounded-lg border-2 transition-all hover:scale-110 flex items-center justify-center ${
-                    value === icon
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-110 shadow-md'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
-                  title={icon}
-                >
-                  {icon}
-                </button>
-              ))}
-            </div>
-          ) : (
+          {displayIcons.length === 0 && (
             <p className="text-center text-gray-500 dark:text-gray-400 py-12">
-              No icons found for "{searchQuery}"
+              No icons found
             </p>
           )}
         </div>

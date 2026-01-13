@@ -65,6 +65,75 @@ export const createTransaction = async (req: AuthRequest, res: Response, next: N
   }
 };
 
+export const updateTransaction = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { type, amount, description, category, date } = req.body;
+
+    // Find the transaction and verify ownership
+    const transaction = await prisma.transaction.findFirst({
+      where: { id },
+      include: { account: true },
+    });
+
+    if (!transaction || transaction.account.userId !== req.userId) {
+      return res.status(404).json({ message: 'Transaction not found' });
+    }
+
+    // Only allow editing manual transactions (not allocations)
+    if (transaction.type === 'allocation' || transaction.isVirtual) {
+      return res.status(400).json({ message: 'Cannot edit allocation or virtual transactions' });
+    }
+
+    const account = transaction.account;
+    const oldAmount = transaction.amount;
+
+    // Calculate new amount based on type
+    let newAmount = amount;
+    if (type === 'withdrawal') {
+      newAmount = -Math.abs(amount);
+    } else if (type === 'deposit') {
+      newAmount = Math.abs(amount);
+    }
+
+    // Calculate balance changes
+    const amountDifference = newAmount - oldAmount;
+
+    // Check if we have sufficient available balance for the change
+    if (amountDifference < 0 && account.availableBalance + amountDifference < 0) {
+      return res.status(400).json({ message: 'Insufficient available balance for this change' });
+    }
+
+    const updatedTransaction = await prisma.$transaction(async (tx) => {
+      // Update account balance
+      await tx.account.update({
+        where: { id: transaction.accountId },
+        data: {
+          balance: { increment: amountDifference },
+          availableBalance: { increment: amountDifference },
+        },
+      });
+
+      // Update the transaction
+      return tx.transaction.update({
+        where: { id },
+        data: {
+          type,
+          amount: newAmount,
+          description,
+          category: category || null,
+          date: date ? new Date(date) : transaction.date,
+          balance: account.balance + amountDifference,
+        },
+      });
+    });
+
+    res.json(updatedTransaction);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteTransaction = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
