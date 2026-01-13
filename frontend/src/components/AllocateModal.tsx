@@ -21,9 +21,11 @@ export default function AllocateModal({ stack, mode, onClose }: AllocateModalPro
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    console.log('handleSubmit called, amount:', amount);
     const numAmount = parseFloat(amount);
 
     if (isNaN(numAmount) || numAmount <= 0) {
+      console.log('Invalid amount:', numAmount);
       alert('Please enter a valid amount');
       return;
     }
