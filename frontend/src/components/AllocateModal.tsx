@@ -124,7 +124,10 @@ export default function AllocateModal({ stack, mode, onClose }: AllocateModalPro
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => {
+                  console.log('Cancel button clicked');
+                  onClose();
+                }}
                 className="flex-1 btn-secondary"
                 disabled={isLoading}
               >
@@ -132,6 +135,9 @@ export default function AllocateModal({ stack, mode, onClose }: AllocateModalPro
               </button>
               <button
                 type="submit"
+                onClick={() => {
+                  console.log('Add button clicked - type submit');
+                }}
                 className="flex-1 btn-primary"
                 disabled={isLoading}
               >
