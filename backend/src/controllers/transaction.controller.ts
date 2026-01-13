@@ -72,14 +72,14 @@ export const deleteTransaction = async (req: AuthRequest, res: Response, next: N
     // Find the transaction and verify ownership
     const transaction = await prisma.transaction.findFirst({
       where: { id },
-      include: { account: true },
+      include: { account: true, stack: true },
     });
 
     if (!transaction || transaction.account.userId !== req.userId) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
 
-    // Use a transaction to delete and update account balance
+    // Use a transaction to delete and update account balance and stack amount
     await prisma.$transaction(async (tx) => {
       // Delete the transaction
       await tx.transaction.delete({
@@ -94,6 +94,18 @@ export const deleteTransaction = async (req: AuthRequest, res: Response, next: N
           availableBalance: { decrement: transaction.amount },
         },
       });
+
+      // If this was a stack allocation, update the stack's currentAmount
+      if (transaction.stackId && transaction.type === 'allocation') {
+        await tx.stack.update({
+          where: { id: transaction.stackId },
+          data: {
+            // Reverse the allocation: if amount was -10 (money added to stack),
+            // we need to subtract it (add 10 back), so we decrement by the negative = increment
+            currentAmount: { decrement: transaction.amount },
+          },
+        });
+      }
     });
 
     res.json({ message: 'Transaction deleted successfully' });
