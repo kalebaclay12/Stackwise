@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Check, Trash2 } from 'lucide-react';
+import { Bell, Check, Trash2, RefreshCw, CheckCircle, Calendar, Link, Zap } from 'lucide-react';
 import { notificationAPI, Notification } from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -107,13 +107,26 @@ export default function NotificationBell() {
     setIsOpen(false);
   };
 
-  const getNotificationIcon = (_type: string) => {
-    // You can customize icons based on notification type
-    return '🔔';
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'stack_reset_pending':
+        return <RefreshCw className="w-5 h-5" />;
+      case 'stack_completed':
+        return <CheckCircle className="w-5 h-5" />;
+      case 'stack_due_soon':
+        return <Calendar className="w-5 h-5" />;
+      case 'bank_synced':
+        return <Link className="w-5 h-5" />;
+      case 'transaction_matched':
+        return <Zap className="w-5 h-5" />;
+      default:
+        return <Bell className="w-5 h-5" />;
+    }
   };
 
   const getNotificationColor = (type: string) => {
     const colors: Record<string, string> = {
+      stack_reset_pending: 'from-orange-500 to-amber-500',
       stack_completed: 'from-green-500 to-emerald-500',
       stack_due_soon: 'from-yellow-500 to-orange-500',
       bank_synced: 'from-blue-500 to-indigo-500',

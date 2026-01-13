@@ -62,7 +62,9 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
       <div
         onClick={handleCardClick}
         className={`card hover:shadow-lg transition-all duration-200 cursor-pointer group border-2 ${
-          stack.isCompleted
+          stack.isCompleted && stack.pendingReset
+            ? 'border-orange-400 dark:border-orange-600 bg-orange-50/50 dark:bg-orange-900/10 animate-pulse'
+            : stack.isCompleted
             ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
             : 'border-transparent hover:border-primary-200 dark:hover:border-primary-800'
         }`}
@@ -98,11 +100,16 @@ export default function StackCard({ stack, isDragging, priorityLabel, dragHandle
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">
                     {stack.name}
                   </h3>
-                  {stack.isCompleted && (
+                  {stack.isCompleted && stack.pendingReset && (
+                    <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full animate-pulse">
+                      Reset Needed
+                    </span>
+                  )}
+                  {stack.isCompleted && !stack.pendingReset && (
                     <span className="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
                       Completed
                     </span>

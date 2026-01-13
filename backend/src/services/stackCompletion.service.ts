@@ -17,7 +17,10 @@ export class StackCompletionService {
    * Check if a stack has reached its target and mark as completed
    */
   async checkAndMarkCompleted(stackId: string): Promise<boolean> {
-    const stack = await prisma.stack.findUnique({ where: { id: stackId } });
+    const stack = await prisma.stack.findUnique({
+      where: { id: stackId },
+      include: { account: true }
+    });
 
     if (!stack || !stack.targetAmount) {
       return false;
@@ -25,14 +28,31 @@ export class StackCompletionService {
 
     // Check if stack has reached or exceeded target
     if (stack.currentAmount >= stack.targetAmount && !stack.isCompleted) {
+      const shouldAskReset = stack.resetBehavior === 'ask_reset';
+
       await prisma.stack.update({
         where: { id: stackId },
         data: {
           isCompleted: true,
           completedAt: new Date(),
-          pendingReset: stack.resetBehavior === 'ask_reset',
+          pendingReset: shouldAskReset,
         },
       });
+
+      // Create notification if user needs to decide on reset
+      if (shouldAskReset) {
+        await prisma.notification.create({
+          data: {
+            userId: stack.account.userId,
+            type: 'stack_reset_pending',
+            title: `${stack.name} is ready to reset!`,
+            message: `Your stack "${stack.name}" has reached its goal of $${stack.targetAmount.toFixed(2)}. Would you like to reset it and start saving again?`,
+            data: JSON.stringify({ stackId: stack.id, stackName: stack.name }),
+            read: false,
+          },
+        });
+      }
+
       return true;
     }
 
