@@ -16,8 +16,12 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
   const [showDeallocate, setShowDeallocate] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Close modal when clicking outside
-  useClickOutside(modalRef, onClose);
+  // Close modal when clicking outside, but not when AllocateModal is open
+  useClickOutside(modalRef, () => {
+    if (!showAllocate && !showDeallocate) {
+      onClose();
+    }
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

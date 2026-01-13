@@ -2,7 +2,6 @@ import { useState, FormEvent, useRef } from 'react';
 import { Stack } from '../types';
 import { useAccountStore } from '../store/accountStore';
 import { X, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
-import { useClickOutside } from '../hooks/useClickOutside';
 
 interface AllocateModalProps {
   stack: Stack;
@@ -16,8 +15,8 @@ export default function AllocateModal({ stack, mode, onClose }: AllocateModalPro
   const { allocateToStack, deallocateFromStack } = useAccountStore();
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Close modal when clicking outside
-  useClickOutside(modalRef, onClose);
+  // Disabled useClickOutside - it was interfering with button clicks
+  // useClickOutside(modalRef, onClose);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
