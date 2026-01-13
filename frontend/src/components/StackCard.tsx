@@ -6,6 +6,7 @@ import {
   Trash2,
   Edit2,
   CheckCircle2,
+  GripVertical,
 } from 'lucide-react';
 import StackDetailModal from './StackDetailModal';
 import EditStackModal from './EditStackModal';
@@ -15,10 +16,10 @@ interface StackCardProps {
   stack: Stack;
   isDragging?: boolean;
   priorityLabel?: string;
-  onModalChange?: (isOpen: boolean) => void;
+  dragHandleProps?: any; // Props to attach to the drag handle
 }
 
-export default function StackCard({ stack, isDragging, priorityLabel, onModalChange }: StackCardProps) {
+export default function StackCard({ stack, isDragging, priorityLabel, dragHandleProps }: StackCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -31,14 +32,6 @@ export default function StackCard({ stack, isDragging, priorityLabel, onModalCha
       setShowCompletion(true);
     }
   }, [stack.isCompleted, stack.pendingReset]);
-
-  // Notify parent when any modal opens or closes
-  useEffect(() => {
-    const anyModalOpen = showDetail || showEdit || showCompletion;
-    if (onModalChange) {
-      onModalChange(anyModalOpen);
-    }
-  }, [showDetail, showEdit, showCompletion, onModalChange]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -68,7 +61,7 @@ export default function StackCard({ stack, isDragging, priorityLabel, onModalCha
     <>
       <div
         onClick={handleCardClick}
-        className={`card hover:shadow-lg transition-all duration-200 cursor-grab active:cursor-grabbing group border-2 ${
+        className={`card hover:shadow-lg transition-all duration-200 cursor-pointer group border-2 ${
           stack.isCompleted
             ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
             : 'border-transparent hover:border-primary-200 dark:hover:border-primary-800'
@@ -83,6 +76,15 @@ export default function StackCard({ stack, isDragging, priorityLabel, onModalCha
             </div>
           )}
           <div className="flex items-start justify-between">
+            {/* Drag Handle - only visible on hover */}
+            <div
+              {...dragHandleProps}
+              onClick={(e) => e.stopPropagation()}
+              className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 -ml-2 mr-1"
+              title="Drag to reorder"
+            >
+              <GripVertical className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+            </div>
             <div className="flex items-center gap-3 flex-1">
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 relative"

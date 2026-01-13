@@ -422,17 +422,7 @@ export default function DashboardPage() {
                   </button>
                 </div>
               </div>
-              <StackList
-                accountId={selectedAccount.id}
-                disableDrag={
-                  showCreateStack ||
-                  showCreateAccount ||
-                  showEditAccount ||
-                  showPendingMatches ||
-                  showImportCSV ||
-                  showCreateTransaction
-                }
-              />
+              <StackList accountId={selectedAccount.id} />
             </div>
           </>
         )}

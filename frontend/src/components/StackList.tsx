@@ -24,18 +24,14 @@ import { Stack } from '../types';
 
 interface StackListProps {
   accountId: string;
-  disableDrag?: boolean;
 }
 
 interface SortableStackItemProps {
   stack: Stack;
-  isDraggingAny: boolean;
   priorityLabel: string;
-  disableDrag?: boolean;
-  onModalChange?: (isOpen: boolean) => void;
 }
 
-function SortableStackItem({ stack, isDraggingAny, priorityLabel, disableDrag, onModalChange }: SortableStackItemProps) {
+function SortableStackItem({ stack, priorityLabel }: SortableStackItemProps) {
   const {
     attributes,
     listeners,
@@ -43,54 +39,34 @@ function SortableStackItem({ stack, isDraggingAny, priorityLabel, disableDrag, o
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: stack.id, disabled: disableDrag });
+  } = useSortable({ id: stack.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: disableDrag ? 'default' : (isDraggingAny ? 'grabbing' : 'grab'),
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...(!disableDrag && listeners)}
-    >
+    <div ref={setNodeRef} style={style} {...attributes}>
       <StackCard
         stack={stack}
         isDragging={isDragging}
         priorityLabel={priorityLabel}
-        onModalChange={onModalChange}
+        dragHandleProps={listeners}
       />
     </div>
   );
 }
 
-export default function StackList({ accountId, disableDrag = false }: StackListProps) {
+export default function StackList({ accountId }: StackListProps) {
   const { stacks, fetchStacks, updateStackPriorities } = useAccountStore();
   const accountStacks = stacks[accountId] || [];
   const [sortedStacks, setSortedStacks] = useState<Stack[]>([]);
-  const [isDraggingAny, setIsDraggingAny] = useState(false);
-  const [openModalsCount, setOpenModalsCount] = useState(0);
-
-  // Disable drag if parent says so OR if any modal is open
-  const shouldDisableDrag = disableDrag || openModalsCount > 0;
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Must move 8px before drag starts (allows clicks/taps)
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250, // Longer delay for touch to prevent accidental drags on mobile
-        tolerance: 5,
-      },
-    }),
+    useSensor(PointerSensor),
+    useSensor(TouchSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -104,16 +80,7 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
     setSortedStacks([...accountStacks].sort((a, b) => a.priority - b.priority));
   }, [accountStacks]);
 
-  const handleModalChange = (isOpen: boolean) => {
-    setOpenModalsCount(prev => isOpen ? prev + 1 : Math.max(0, prev - 1));
-  };
-
-  const handleDragStart = () => {
-    setIsDraggingAny(true);
-  };
-
   const handleDragEnd = async (event: DragEndEvent) => {
-    setIsDraggingAny(false);
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -147,48 +114,11 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
     );
   }
 
-  // When drag is disabled (modals are open), render stacks without DndContext
-  if (shouldDisableDrag) {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sortedStacks.map((stack, index) => {
-            const priority = index + 1;
-            let priorityLabel: string;
-
-            if (priority === 1) {
-              priorityLabel = '1st Priority';
-            } else if (priority === 2) {
-              priorityLabel = '2nd Priority';
-            } else if (priority === 3) {
-              priorityLabel = '3rd Priority';
-            } else {
-              priorityLabel = `${priority}th Priority`;
-            }
-
-            return (
-              <div key={stack.id}>
-                <StackCard
-                  stack={stack}
-                  isDragging={false}
-                  priorityLabel={priorityLabel}
-                  onModalChange={handleModalChange}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {/* Stack Grid with Drag and Drop */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={sortedStacks.map((s) => s.id)} strategy={rectSortingStrategy}>
@@ -211,10 +141,7 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
                 <SortableStackItem
                   key={stack.id}
                   stack={stack}
-                  isDraggingAny={isDraggingAny}
                   priorityLabel={priorityLabel}
-                  disableDrag={disableDrag}
-                  onModalChange={handleModalChange}
                 />
               );
             })}
