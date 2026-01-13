@@ -50,6 +50,12 @@ export default function IconPickerModal({
     onClose();
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   // Filter icons based on search
   const getDisplayIcons = () => {
     if (searchQuery) {
@@ -71,8 +77,14 @@ export default function IconPickerModal({
   const displayIcons = getDisplayIcons();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
