@@ -337,10 +337,10 @@ export default function DashboardPage() {
                   account={account}
                   isSelected={selectedAccount?.id === account.id}
                   onClick={() => selectAccount(account)}
-                  onEdit={!account.linkedBankId ? () => {
+                  onEdit={() => {
                     selectAccount(account);
                     setShowEditAccount(true);
-                  } : undefined}
+                  }}
                   onDelete={!account.linkedBankId ? () => {
                     selectAccount(account);
                     handleDeleteAccount();

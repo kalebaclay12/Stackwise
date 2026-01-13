@@ -46,8 +46,8 @@ export default function AccountCard({ account, isSelected, onClick, onEdit, onDe
         ? 'bg-gradient-to-br from-blue-500 to-blue-600'
         : 'bg-gradient-to-br from-green-500 to-emerald-600');
 
-  // Show dropdown menu for non-linked accounts only
-  const showMenuButton = !account.linkedBankId && (onEdit || onDelete);
+  // Show dropdown menu if edit or delete handlers are provided
+  const showMenuButton = onEdit || onDelete;
 
   return (
     <button

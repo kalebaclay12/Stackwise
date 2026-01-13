@@ -40,6 +40,7 @@ export default function EditAccountModal({ account, onClose, onSuccess }: EditAc
   useClickOutside(modalRef, onClose);
 
   const colorOptions = type === 'checking' ? CHECKING_GRADIENTS : SAVINGS_GRADIENTS;
+  const isLinkedAccount = !!account.linkedBankId;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -62,7 +63,7 @@ export default function EditAccountModal({ account, onClose, onSuccess }: EditAc
         ref={modalRef}
         className="bg-white rounded-xl max-w-md w-full p-6"
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <Edit3 className="w-6 h-6 text-primary-600" />
             <h2 className="text-xl font-semibold">Edit Account</h2>
@@ -71,6 +72,12 @@ export default function EditAccountModal({ account, onClose, onSuccess }: EditAc
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {isLinkedAccount && (
+          <p className="text-sm text-gray-500 mb-6">
+            This is a real bank account. You can customize the display name and color.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -99,10 +106,17 @@ export default function EditAccountModal({ account, onClose, onSuccess }: EditAc
               onChange={(e) => setType(e.target.value as 'checking' | 'savings')}
               className="input"
               required
+              disabled={isLinkedAccount}
+              title={isLinkedAccount ? 'Account type cannot be changed for real bank accounts' : ''}
             >
               <option value="checking">Checking</option>
               <option value="savings">Savings</option>
             </select>
+            {isLinkedAccount && (
+              <p className="text-xs text-gray-500 mt-1">
+                Account type is set by your bank and cannot be changed
+              </p>
+            )}
           </div>
 
           <ColorPicker
