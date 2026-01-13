@@ -6,6 +6,8 @@ import { calculatePaymentAmount, getFrequencyLabel, formatDaysUntilDue } from '.
 import { TIER_LIMITS } from '../types';
 import UpgradePrompt from './UpgradePrompt';
 import { useClickOutside } from '../hooks/useClickOutside';
+import ColorPicker from './ColorPicker';
+import IconPicker from './IconPicker';
 
 interface CreateStackModalProps {
   accountId: string;
@@ -17,12 +19,11 @@ const STACK_COLORS = [
   '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
 ];
 
-const STACK_ICONS = ['💰', '🏠', '🚗', '✈️', '🎓', '🏥', '🎯', '💳', '🛒', '🎁', '📱', '🍔', '⚡', '🎮', '💡'];
 
 export default function CreateStackModal({ accountId, onClose }: CreateStackModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [icon, setIcon] = useState(STACK_ICONS[0]);
+  const [icon, setIcon] = useState('💰');
   const [color, setColor] = useState(STACK_COLORS[0]);
   const [targetAmount, setTargetAmount] = useState('');
   const [targetDueDate, setTargetDueDate] = useState('');
@@ -188,46 +189,19 @@ export default function CreateStackModal({ accountId, onClose }: CreateStackModa
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Icon
-                </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {STACK_ICONS.slice(0, 10).map((i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setIcon(i)}
-                      className={`w-10 h-10 text-2xl rounded-lg border-2 transition-all ${
-                        icon === i ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                      }`}
-                    >
-                      {i}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <IconPicker
+              value={icon}
+              onChange={setIcon}
+              label="Icon"
+            />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Color
-                </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {STACK_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setColor(c)}
-                      className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                        color === c ? 'border-gray-900 dark:border-white scale-110' : 'border-transparent'
-                      }`}
-                      style={{ backgroundColor: c }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+            <ColorPicker
+              value={color}
+              onChange={setColor}
+              presetColors={STACK_COLORS}
+              label="Color"
+              showExpanded
+            />
           </div>
 
           {/* Goal Settings Section */}

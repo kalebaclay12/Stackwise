@@ -51,7 +51,7 @@ export const accountAPI = {
   create: (data: { type: 'checking' | 'savings'; name: string }) =>
     api.post<Account>('/accounts', data),
 
-  update: (id: string, data: { type?: 'checking' | 'savings'; name?: string }) =>
+  update: (id: string, data: { type?: 'checking' | 'savings'; name?: string; color?: string }) =>
     api.put<Account>(`/accounts/${id}`, data),
 
   delete: (id: string) =>

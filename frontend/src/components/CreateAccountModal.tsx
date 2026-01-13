@@ -2,6 +2,7 @@ import { useState, FormEvent, useRef } from 'react';
 import { useAccountStore } from '../store/accountStore';
 import { X, Wallet, TrendingUp } from 'lucide-react';
 import { useClickOutside } from '../hooks/useClickOutside';
+import ColorPicker from './ColorPicker';
 
 interface CreateAccountModalProps {
   onClose: () => void;
@@ -118,33 +119,12 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Card Color (Optional)
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {colorOptions.map((gradient) => (
-                <button
-                  key={gradient}
-                  type="button"
-                  onClick={() => setColor(gradient)}
-                  className={`h-16 rounded-lg transition-all ${
-                    color === gradient ? 'ring-2 ring-gray-900 ring-offset-2 scale-105' : 'hover:scale-105'
-                  }`}
-                  style={{ background: gradient }}
-                />
-              ))}
-            </div>
-            {color && (
-              <button
-                type="button"
-                onClick={() => setColor('')}
-                className="mt-2 text-xs text-gray-500 hover:text-gray-700"
-              >
-                Clear selection (use default)
-              </button>
-            )}
-          </div>
+          <ColorPicker
+            value={color}
+            onChange={setColor}
+            presetColors={colorOptions}
+            label="Card Color (Optional)"
+          />
 
           <div className="flex gap-3 pt-4">
             <button

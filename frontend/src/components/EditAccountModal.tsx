@@ -3,6 +3,7 @@ import { X, Edit3 } from 'lucide-react';
 import { Account } from '../types';
 import { accountAPI } from '../services/api';
 import { useClickOutside } from '../hooks/useClickOutside';
+import ColorPicker from './ColorPicker';
 
 interface EditAccountModalProps {
   account: Account;
@@ -10,21 +11,42 @@ interface EditAccountModalProps {
   onSuccess: () => void;
 }
 
+const CHECKING_GRADIENTS = [
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%)',
+  'linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)',
+  'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+  'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+  'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+];
+
+const SAVINGS_GRADIENTS = [
+  'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+  'linear-gradient(135deg, #34d399 0%, #059669 100%)',
+  'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)',
+  'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+  'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+  'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+];
+
 export default function EditAccountModal({ account, onClose, onSuccess }: EditAccountModalProps) {
   const [name, setName] = useState(account.name);
   const [type, setType] = useState<'checking' | 'savings'>(account.type);
+  const [color, setColor] = useState(account.color || '');
   const [isLoading, setIsLoading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Close modal when clicking outside
   useClickOutside(modalRef, onClose);
 
+  const colorOptions = type === 'checking' ? CHECKING_GRADIENTS : SAVINGS_GRADIENTS;
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await accountAPI.update(account.id, { name, type });
+      await accountAPI.update(account.id, { name, type, color: color || undefined });
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -82,6 +104,13 @@ export default function EditAccountModal({ account, onClose, onSuccess }: EditAc
               <option value="savings">Savings</option>
             </select>
           </div>
+
+          <ColorPicker
+            value={color}
+            onChange={setColor}
+            presetColors={colorOptions}
+            label="Card Color (Optional)"
+          />
 
           <div className="flex gap-3 pt-4">
             <button
