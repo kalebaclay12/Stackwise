@@ -35,14 +35,20 @@ export default function AllocateModal({ stack, mode, onClose }: AllocateModalPro
 
     setIsLoading(true);
     try {
+      console.log(`${mode === 'allocate' ? 'Allocating' : 'Deallocating'} $${numAmount} to/from stack ${stack.id}`);
+
       if (mode === 'allocate') {
         await allocateToStack(stack.id, numAmount);
       } else {
         await deallocateFromStack(stack.id, numAmount);
       }
+
+      console.log(`${mode === 'allocate' ? 'Allocation' : 'Deallocation'} successful`);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Allocation error:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      alert(error.response?.data?.message || error.message || `Failed to ${mode === 'allocate' ? 'add' : 'remove'} money. Please try again.`);
     } finally {
       setIsLoading(false);
     }
