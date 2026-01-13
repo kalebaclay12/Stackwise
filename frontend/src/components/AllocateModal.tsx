@@ -62,43 +62,43 @@ export default function AllocateModal({ stack, mode, onClose }: AllocateModalPro
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div
         ref={modalRef}
-        className="bg-white rounded-xl max-w-md w-full p-6"
+        className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 shadow-2xl"
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             {mode === 'allocate' ? (
-              <ArrowUpCircle className="w-6 h-6 text-primary-600" />
+              <ArrowUpCircle className="w-6 h-6 text-primary-600 dark:text-primary-400" />
             ) : (
-              <ArrowDownCircle className="w-6 h-6 text-gray-600" />
+              <ArrowDownCircle className="w-6 h-6 text-gray-600 dark:text-gray-400" />
             )}
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {mode === 'allocate' ? 'Add Money' : 'Remove Money'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         <div className="mb-6">
-          <div className="bg-gray-50 rounded-lg p-4 mb-4">
-            <p className="text-sm text-gray-600 mb-1">Stack</p>
-            <p className="font-semibold text-gray-900">{stack.name}</p>
-            <p className="text-sm text-gray-600 mt-2">Current Amount</p>
-            <p className="text-lg font-bold text-gray-900">
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Stack</p>
+            <p className="font-semibold text-gray-900 dark:text-white">{stack.name}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Current Amount</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">
               {formatCurrency(stack.currentAmount)}
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Amount
               </label>
               <div className="relative">
