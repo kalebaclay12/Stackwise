@@ -20,12 +20,24 @@ export function useClickOutside(
       // Only trigger callback if:
       // 1. The ref element exists
       // 2. Both mousedown and mouseup happened outside the element
+      // 3. Not clicking on a higher z-index modal (child modal)
       if (
         ref.current &&
         mouseDownTarget &&
         !ref.current.contains(mouseDownTarget as Node) &&
         !ref.current.contains(event.target as Node)
       ) {
+        // Check if click target is part of a higher z-index element (like a child modal)
+        const target = event.target as HTMLElement;
+        const clickedElement = target.closest('[class*="z-["]');
+        if (clickedElement) {
+          const zIndexMatch = clickedElement.className.match(/z-\[(\d+)\]/);
+          if (zIndexMatch && parseInt(zIndexMatch[1]) > 50) {
+            // Don't close if clicking on a higher z-index modal
+            mouseDownTarget = null;
+            return;
+          }
+        }
         callback();
       }
       mouseDownTarget = null;
