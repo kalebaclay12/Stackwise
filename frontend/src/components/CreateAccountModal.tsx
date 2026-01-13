@@ -1,8 +1,8 @@
 import { useState, FormEvent, useRef } from 'react';
 import { useAccountStore } from '../store/accountStore';
-import { X, Wallet, TrendingUp } from 'lucide-react';
+import { X, Wallet, TrendingUp, Palette } from 'lucide-react';
 import { useClickOutside } from '../hooks/useClickOutside';
-import ColorPicker from './ColorPicker';
+import ColorPickerModal from './ColorPickerModal';
 
 interface CreateAccountModalProps {
   onClose: () => void;
@@ -31,6 +31,7 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
   const [type, setType] = useState<'checking' | 'savings'>('checking');
   const [color, setColor] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const { createAccount } = useAccountStore();
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -119,12 +120,22 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
             />
           </div>
 
-          <ColorPicker
-            value={color}
-            onChange={setColor}
-            presetColors={colorOptions}
-            label="Card Color (Optional)"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Card Color (Optional)
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowColorPicker(true)}
+              className="w-full h-16 rounded-lg border-2 border-transparent hover:border-white/50 transition-all flex items-center justify-center gap-2 shadow-md"
+              style={{ background: color || colorOptions[0] }}
+            >
+              <Palette className="w-5 h-5 text-white drop-shadow-md" />
+              <span className="text-sm text-white font-medium drop-shadow-md">
+                {color ? 'Change Color' : 'Choose Color'}
+              </span>
+            </button>
+          </div>
 
           <div className="flex gap-3 pt-4">
             <button
@@ -145,6 +156,16 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
           </div>
         </form>
       </div>
+
+      {/* Color Picker Modal */}
+      <ColorPickerModal
+        isOpen={showColorPicker}
+        onClose={() => setShowColorPicker(false)}
+        value={color}
+        onChange={setColor}
+        presetColors={colorOptions}
+        title="Choose Account Color"
+      />
     </div>
   );
 }

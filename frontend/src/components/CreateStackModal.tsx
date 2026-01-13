@@ -1,13 +1,13 @@
 import { useState, FormEvent, useMemo, useRef, useEffect } from 'react';
 import { useAccountStore } from '../store/accountStore';
 import { useAuthStore } from '../store/authStore';
-import { X, Target, Calendar, Repeat } from 'lucide-react';
+import { X, Target, Calendar, Repeat, Palette, Smile } from 'lucide-react';
 import { calculatePaymentAmount, getFrequencyLabel, formatDaysUntilDue } from '../utils/paymentCalculator';
 import { TIER_LIMITS } from '../types';
 import UpgradePrompt from './UpgradePrompt';
 import { useClickOutside } from '../hooks/useClickOutside';
-import ColorPicker from './ColorPicker';
-import IconPicker from './IconPicker';
+import ColorPickerModal from './ColorPickerModal';
+import IconPickerModal from './IconPickerModal';
 
 interface CreateStackModalProps {
   accountId: string;
@@ -37,6 +37,8 @@ export default function CreateStackModal({ accountId, onClose }: CreateStackModa
   const [resetBehavior, setResetBehavior] = useState<'none' | 'auto_reset' | 'ask_reset' | 'delete'>('none');
   const [overflowBehavior, setOverflowBehavior] = useState<'next_priority' | 'available_balance' | 'keep_in_stack'>('next_priority');
   const [isLoading, setIsLoading] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
   const { createStack, stacks } = useAccountStore();
   const { user } = useAuthStore();
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -189,18 +191,57 @@ export default function CreateStackModal({ accountId, onClose }: CreateStackModa
               />
             </div>
 
-            <IconPicker
+            {/* Icon and Color Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Icon
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowIconPicker(true)}
+                  className="w-full h-20 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400 transition-all flex flex-col items-center justify-center gap-2 bg-white dark:bg-gray-700"
+                >
+                  <span className="text-4xl">{icon}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <Smile className="w-3 h-3" />
+                    Change Icon
+                  </span>
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Color
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowColorPicker(true)}
+                  className="w-full h-20 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400 transition-all flex flex-col items-center justify-center gap-2"
+                  style={{ background: color }}
+                >
+                  <Palette className="w-6 h-6 text-white drop-shadow" />
+                  <span className="text-xs text-white drop-shadow font-medium">Change Color</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Modals */}
+            <IconPickerModal
+              isOpen={showIconPicker}
+              onClose={() => setShowIconPicker(false)}
               value={icon}
               onChange={setIcon}
-              label="Icon"
+              title="Choose Stack Icon"
             />
 
-            <ColorPicker
+            <ColorPickerModal
+              isOpen={showColorPicker}
+              onClose={() => setShowColorPicker(false)}
               value={color}
               onChange={setColor}
               presetColors={STACK_COLORS}
-              label="Color"
-              showExpanded
+              title="Choose Stack Color"
             />
           </div>
 

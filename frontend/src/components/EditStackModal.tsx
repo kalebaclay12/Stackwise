@@ -1,13 +1,13 @@
 import { useState, FormEvent, useMemo, useRef, useEffect } from 'react';
 import { useAccountStore } from '../store/accountStore';
 import { useAuthStore } from '../store/authStore';
-import { X, Edit3, Calendar, Repeat } from 'lucide-react';
+import { X, Edit3, Calendar, Repeat, Palette } from 'lucide-react';
 import { Stack, TIER_LIMITS } from '../types';
 import { calculatePaymentAmount, getFrequencyLabel, formatDaysUntilDue } from '../utils/paymentCalculator';
 import UpgradePrompt from './UpgradePrompt';
 import { useClickOutside } from '../hooks/useClickOutside';
-import ColorPicker from './ColorPicker';
-import IconPicker from './IconPicker';
+import ColorPickerModal from './ColorPickerModal';
+import IconPickerModal from './IconPickerModal';
 
 interface EditStackModalProps {
   stack: Stack;
@@ -37,6 +37,8 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
   const [resetBehavior, setResetBehavior] = useState<'none' | 'auto_reset' | 'ask_reset' | 'delete'>(stack.resetBehavior);
   const [overflowBehavior, setOverflowBehavior] = useState<'next_priority' | 'available_balance' | 'keep_in_stack'>(stack.overflowBehavior);
   const [isLoading, setIsLoading] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
   const { updateStack } = useAccountStore();
   const { user } = useAuthStore();
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -168,19 +170,38 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
               />
             </div>
 
-            <IconPicker
-              value={icon}
-              onChange={setIcon}
-              label="Icon"
-            />
+            <div className="grid grid-cols-2 gap-4">
+              {/* Icon Button */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Icon
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowIconPicker(true)}
+                  className="w-full h-20 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500 transition-all flex flex-col items-center justify-center gap-1 bg-white dark:bg-gray-700"
+                >
+                  <span className="text-4xl">{icon}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Change Icon</span>
+                </button>
+              </div>
 
-            <ColorPicker
-              value={color}
-              onChange={setColor}
-              presetColors={STACK_COLORS}
-              label="Color"
-              showExpanded
-            />
+              {/* Color Button */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Color
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowColorPicker(true)}
+                  className="w-full h-20 rounded-lg border-2 border-transparent hover:border-white/50 transition-all flex flex-col items-center justify-center gap-1 shadow-md"
+                  style={{ background: color }}
+                >
+                  <Palette className="w-6 h-6 text-white drop-shadow-md" />
+                  <span className="text-xs text-white font-medium drop-shadow-md">Change Color</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Goal Settings Section */}
@@ -536,6 +557,25 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
           </div>
         </form>
       </div>
+
+      {/* Icon Picker Modal */}
+      <IconPickerModal
+        isOpen={showIconPicker}
+        onClose={() => setShowIconPicker(false)}
+        value={icon}
+        onChange={setIcon}
+        title="Choose Stack Icon"
+      />
+
+      {/* Color Picker Modal */}
+      <ColorPickerModal
+        isOpen={showColorPicker}
+        onClose={() => setShowColorPicker(false)}
+        value={color}
+        onChange={setColor}
+        presetColors={STACK_COLORS}
+        title="Choose Stack Color"
+      />
     </div>
   );
 }
