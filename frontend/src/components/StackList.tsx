@@ -82,15 +82,13 @@ export default function StackList({ accountId, disableDrag = false }: StackListP
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 15, // Increased distance to prevent accidental drags when selecting text
-        delay: 100, // Add small delay to distinguish drag from click/select
-        tolerance: 5,
+        distance: 8, // Must move 8px before drag starts (allows clicks/taps)
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
         delay: 250, // Longer delay for touch to prevent accidental drags on mobile
-        tolerance: 8, // More tolerance for touch input
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
