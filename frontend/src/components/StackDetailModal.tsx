@@ -1,10 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { X, ArrowUpCircle, ArrowDownCircle, TrendingUp, Calendar } from 'lucide-react';
 import { Stack } from '../types';
 import TransactionHistory from './TransactionHistory';
 import AllocateModal from './AllocateModal';
 import { calculatePaymentAmount, formatDaysUntilDue } from '../utils/paymentCalculator';
-import { useClickOutside } from '../hooks/useClickOutside';
 
 interface StackDetailModalProps {
   stack: Stack;
@@ -16,12 +15,39 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
   const [showDeallocate, setShowDeallocate] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Close modal when clicking outside, but not when AllocateModal is open
-  useClickOutside(modalRef, () => {
-    if (!showAllocate && !showDeallocate) {
-      onClose();
-    }
-  });
+  // Completely disable useClickOutside when child modals are open
+  const shouldEnableClickOutside = !showAllocate && !showDeallocate;
+
+  // Close modal when clicking outside
+  useEffect(() => {
+    if (!shouldEnableClickOutside) return;
+
+    let mouseDownTarget: EventTarget | null = null;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      mouseDownTarget = event.target;
+    };
+
+    const handleMouseUp = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        mouseDownTarget &&
+        !modalRef.current.contains(mouseDownTarget as Node) &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+      mouseDownTarget = null;
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [shouldEnableClickOutside, onClose]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
