@@ -37,12 +37,16 @@ export default function EditTransactionModal({ transaction, onClose, onSuccess }
 
     try {
       const { transactionAPI } = await import('../services/api');
+      // Parse date in local timezone to avoid timezone shift issues
+      const [year, month, day] = date.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day, 12, 0, 0); // Use noon to avoid DST issues
+
       await transactionAPI.update(transaction.id, {
         type,
         amount: parseFloat(amount),
         description,
         category: category || undefined,
-        date: new Date(date).toISOString(),
+        date: localDate.toISOString(),
       });
 
       await refreshCurrentAccount();
