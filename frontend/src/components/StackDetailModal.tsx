@@ -4,6 +4,7 @@ import { Stack } from '../types';
 import TransactionHistory from './TransactionHistory';
 import AllocateModal from './AllocateModal';
 import { calculatePaymentAmount, formatDaysUntilDue } from '../utils/paymentCalculator';
+import { useBackButton, usePreventPullToRefresh } from '../hooks/useBackButton';
 
 interface StackDetailModalProps {
   stack: Stack;
@@ -14,6 +15,13 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
   const [showAllocate, setShowAllocate] = useState(false);
   const [showDeallocate, setShowDeallocate] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Handle Android back button - closes modal instead of navigating away
+  useBackButton(!showAllocate && !showDeallocate, onClose, 'stack-detail-modal');
+
+  // Prevent pull-to-refresh when scrolling in the modal
+  usePreventPullToRefresh(scrollContainerRef, !showAllocate && !showDeallocate);
 
   // Completely disable useClickOutside when child modals are open
   const shouldEnableClickOutside = !showAllocate && !showDeallocate;
@@ -48,6 +56,29 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [shouldEnableClickOutside, onClose]);
+
+  // Prevent body scroll when modal is open on mobile
+  useEffect(() => {
+    const originalStyle = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+    const originalTop = document.body.style.top;
+    const originalWidth = document.body.style.width;
+    const scrollY = window.scrollY;
+
+    // Lock body scroll
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    return () => {
+      document.body.style.overflow = originalStyle;
+      document.body.style.position = originalPosition;
+      document.body.style.top = originalTop;
+      document.body.style.width = originalWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -115,148 +146,157 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      {/* Mobile: Full-screen modal, Desktop: Centered modal */}
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:flex md:items-center md:justify-center md:p-4">
         <div
           ref={modalRef}
-          className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full shadow-2xl my-8"
+          className="bg-white dark:bg-gray-800 h-full w-full md:h-auto md:max-h-[90vh] md:rounded-2xl md:max-w-3xl md:w-full md:shadow-2xl flex flex-col"
         >
-          {/* Header */}
-          <div className="border-b border-gray-200 dark:border-gray-700 p-6">
+          {/* Header - Fixed at top */}
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4 md:p-6 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
                 <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl shadow-sm"
+                  className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center text-2xl md:text-3xl shadow-sm flex-shrink-0"
                   style={{ backgroundColor: stack.color + '20' }}
                 >
                   {stack.icon}
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{stack.name}</h2>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">{stack.name}</h2>
                   {stack.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{stack.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{stack.description}</p>
                   )}
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0 ml-2"
               >
                 <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               </button>
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Balance Card */}
-            <div className="bg-gradient-to-br from-primary-500 to-primary-600 dark:from-primary-600 dark:to-primary-700 rounded-xl p-6 text-white shadow-lg">
-              <p className="text-sm opacity-90 mb-1">Current Balance</p>
-              <p className="text-4xl font-bold">
-                {formatCurrency(stack.currentAmount)}
-              </p>
-              {stack.targetAmount && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs opacity-90">Goal: {formatCurrency(stack.targetAmount)}</span>
-                    <span className="text-xs font-semibold">{progressPercent.toFixed(0)}%</span>
+          {/* Content - Scrollable */}
+          <div
+            ref={scrollContainerRef}
+            className="flex-1 overflow-y-auto overscroll-contain"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+              {/* Balance Card */}
+              <div className="bg-gradient-to-br from-primary-500 to-primary-600 dark:from-primary-600 dark:to-primary-700 rounded-xl p-4 md:p-6 text-white shadow-lg">
+                <p className="text-sm opacity-90 mb-1">Current Balance</p>
+                <p className="text-3xl md:text-4xl font-bold">
+                  {formatCurrency(stack.currentAmount)}
+                </p>
+                {stack.targetAmount && (
+                  <div className="mt-3 md:mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs opacity-90">Goal: {formatCurrency(stack.targetAmount)}</span>
+                      <span className="text-xs font-semibold">{progressPercent.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full bg-white/20 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full bg-white transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                    <p className="text-xs mt-2 opacity-90">
+                      {stack.currentAmount >= stack.targetAmount
+                        ? 'Goal reached!'
+                        : `${formatCurrency(stack.targetAmount - stack.currentAmount)} remaining`}
+                    </p>
                   </div>
-                  <div className="w-full bg-white/20 rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full bg-white transition-all duration-500"
-                      style={{ width: `${progressPercent}%` }}
-                    />
+                )}
+              </div>
+
+              {/* Auto-Allocation Info */}
+              {stack.autoAllocate && stack.autoAllocateAmount && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 md:p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 md:w-10 md:h-10 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-base">Auto-Allocation Active</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        {formatCurrency(stack.autoAllocateAmount)} • {getFrequencyLabel(stack.autoAllocateFrequency)}
+                      </p>
+                      {stack.autoAllocateNextDate && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          Next: {formatNextAllocationDate(stack.autoAllocateNextDate)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs mt-2 opacity-90">
-                    {stack.currentAmount >= stack.targetAmount
-                      ? 'Goal reached!'
-                      : `${formatCurrency(stack.targetAmount - stack.currentAmount)} remaining`}
-                  </p>
                 </div>
               )}
-            </div>
 
-            {/* Auto-Allocation Info */}
-            {stack.autoAllocate && stack.autoAllocateAmount && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 dark:text-white mb-1">Auto-Allocation Active</p>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      {formatCurrency(stack.autoAllocateAmount)} • {getFrequencyLabel(stack.autoAllocateFrequency)}
-                    </p>
-                    {stack.autoAllocateNextDate && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                        Next allocation: {formatNextAllocationDate(stack.autoAllocateNextDate)}
-                      </p>
-                    )}
+              {/* Payment Calculator Info */}
+              {paymentCalculation && stack.targetDueDate && (
+                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-3 md:p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 md:w-10 md:h-10 bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-4 h-4 md:w-5 md:h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-base">Payment Plan</p>
+                      {paymentCalculation.isOverdue ? (
+                        <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                          Target date has passed
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {formatDaysUntilDue(paymentCalculation.daysUntilDue)}
+                          </p>
+                          <p className="text-base md:text-lg font-bold text-purple-700 dark:text-purple-300 mt-1">
+                            {formatCurrency(paymentCalculation.amountPerPayment)} per {getFrequencyLabel(stack.autoAllocate && stack.autoAllocateFrequency ? stack.autoAllocateFrequency : 'bi_weekly').toLowerCase()} payment
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            {paymentCalculation.paymentsRemaining} payment{paymentCalculation.paymentsRemaining !== 1 ? 's' : ''} remaining
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 md:gap-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAllocate(true);
+                  }}
+                  className="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-3 px-3 md:px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+                >
+                  <ArrowUpCircle className="w-5 h-5" />
+                  <span className="hidden sm:inline">Add Money</span>
+                  <span className="sm:hidden">Add</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeallocate(true);
+                  }}
+                  disabled={stack.currentAmount === 0}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500 text-gray-900 dark:text-white font-semibold py-3 px-3 md:px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ArrowDownCircle className="w-5 h-5" />
+                  <span className="hidden sm:inline">Remove Money</span>
+                  <span className="sm:hidden">Remove</span>
+                </button>
               </div>
-            )}
 
-            {/* Payment Calculator Info */}
-            {paymentCalculation && stack.targetDueDate && (
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 dark:text-white mb-1">Payment Plan</p>
-                    {paymentCalculation.isOverdue ? (
-                      <p className="text-sm text-red-600 dark:text-red-400 font-medium">
-                        Target date has passed
-                      </p>
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                          {formatDaysUntilDue(paymentCalculation.daysUntilDue)}
-                        </p>
-                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300 mt-1">
-                          {formatCurrency(paymentCalculation.amountPerPayment)} per {getFrequencyLabel(stack.autoAllocate && stack.autoAllocateFrequency ? stack.autoAllocateFrequency : 'bi_weekly').toLowerCase()} payment
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                          {paymentCalculation.paymentsRemaining} payment{paymentCalculation.paymentsRemaining !== 1 ? 's' : ''} remaining to reach your goal
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
+              {/* Transaction History */}
+              <div>
+                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3">Transaction History</h3>
+                <TransactionHistory stackId={stack.id} isMobileModal={true} />
               </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAllocate(true);
-                }}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
-              >
-                <ArrowUpCircle className="w-5 h-5" />
-                Add Money
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDeallocate(true);
-                }}
-                disabled={stack.currentAmount === 0}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ArrowDownCircle className="w-5 h-5" />
-                Remove Money
-              </button>
-            </div>
-
-            {/* Transaction History */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Transaction History</h3>
-              <TransactionHistory stackId={stack.id} />
             </div>
           </div>
         </div>

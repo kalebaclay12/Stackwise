@@ -11,9 +11,10 @@ interface TransactionHistoryProps {
   accountId?: string;
   stackId?: string;
   title?: string;
+  isMobileModal?: boolean; // New prop for mobile-optimized display
 }
 
-export default function TransactionHistory({ accountId, stackId, title }: TransactionHistoryProps) {
+export default function TransactionHistory({ accountId, stackId, title, isMobileModal = false }: TransactionHistoryProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -218,6 +219,129 @@ export default function TransactionHistory({ accountId, stackId, title }: Transa
     }
   };
 
+  // Mobile-optimized compact view for inside modals
+  if (isMobileModal) {
+    return (
+      <div className="space-y-2">
+        {title && (
+          <div className="mb-3">
+            <h3 className="text-lg font-semibold dark:text-white">{title}</h3>
+          </div>
+        )}
+
+        {displayedTransactions.map((transaction) => (
+          <div
+            key={transaction.id}
+            className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl"
+          >
+            {/* Icon - Smaller on mobile */}
+            <div className={`w-9 h-9 ${getIconBgColor(transaction.type, transaction.amount)} rounded-lg flex items-center justify-center shadow-sm flex-shrink-0`}>
+              {getTransactionIcon(transaction.type, transaction.amount)}
+            </div>
+
+            {/* Content - Compact layout */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                  {transaction.description}
+                </p>
+                <p className={`text-sm font-bold whitespace-nowrap ${getAmountColor(transaction.type, transaction.amount)}`}>
+                  {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
+                </p>
+              </div>
+              <div className="flex items-center justify-between mt-0.5">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {format(new Date(transaction.date), 'MMM d, yyyy')}
+                </span>
+                <div className="flex items-center gap-1">
+                  {/* Action buttons - Icon only on mobile */}
+                  {transaction.matchConfirmed && transaction.stackId && !transaction.isVirtual && (
+                    <button
+                      onClick={() => handleUnmatch(transaction.id)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"
+                      title="Unmatch"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenDropdownId(openDropdownId === transaction.id ? null : transaction.id);
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md transition-all"
+                      title="Options"
+                    >
+                      <MoreVertical className="w-3.5 h-3.5" />
+                    </button>
+
+                    {openDropdownId === transaction.id && (
+                      <div
+                        ref={dropdownRef}
+                        className="absolute right-0 bottom-full mb-1 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {!transaction.isVirtual && transaction.type !== 'allocation' && (
+                          <button
+                            onClick={() => handleEditTransaction(transaction)}
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-300"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteTransaction(transaction.id)}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-red-600 dark:text-red-400"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Compact pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={handlePrevPage}
+              disabled={currentPage === 0}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {currentPage + 1} / {totalPages}
+            </span>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage >= totalPages - 1}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {editingTransaction && (
+          <EditTransactionModal
+            transaction={editingTransaction}
+            onClose={() => setEditingTransaction(null)}
+            onSuccess={handleEditSuccess}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Desktop/default view
   return (
     <div className="card">
       {title && (
