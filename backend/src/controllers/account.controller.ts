@@ -259,3 +259,110 @@ export const importCSVTransactions = async (req: AuthRequest, res: Response, nex
     next(error);
   }
 };
+
+// Get balance history for all user accounts
+export const getBalanceHistory = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const months = parseInt(req.query.months as string) || 6;
+
+    // Get date range
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+    startDate.setDate(1); // Start of month
+    startDate.setHours(0, 0, 0, 0);
+
+    // Get user's accounts
+    const accounts = await prisma.account.findMany({
+      where: { userId: req.userId },
+      select: { id: true, name: true, color: true },
+    });
+
+    if (accounts.length === 0) {
+      return res.json({ accounts: [], history: [] });
+    }
+
+    const accountIds = accounts.map(a => a.id);
+
+    // Get balance history for these accounts
+    const history = await prisma.balanceHistory.findMany({
+      where: {
+        accountId: { in: accountIds },
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    // If no history exists, create initial entries with current balances
+    if (history.length === 0) {
+      const accountsWithBalance = await prisma.account.findMany({
+        where: { userId: req.userId },
+        select: { id: true, name: true, color: true, balance: true },
+      });
+
+      // Return current state as single point
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      return res.json({
+        accounts: accountsWithBalance.map(a => ({
+          id: a.id,
+          name: a.name,
+          color: a.color,
+        })),
+        history: accountsWithBalance.map(a => ({
+          accountId: a.id,
+          balance: a.balance,
+          date: today.toISOString(),
+        })),
+      });
+    }
+
+    res.json({
+      accounts,
+      history,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Record daily balance snapshot (called by cron job)
+export const recordBalanceSnapshot = async () => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get all accounts
+    const accounts = await prisma.account.findMany({
+      select: { id: true, balance: true },
+    });
+
+    // Record balance for each account
+    for (const account of accounts) {
+      await prisma.balanceHistory.upsert({
+        where: {
+          accountId_date: {
+            accountId: account.id,
+            date: today,
+          },
+        },
+        update: {
+          balance: account.balance,
+        },
+        create: {
+          accountId: account.id,
+          balance: account.balance,
+          date: today,
+        },
+      });
+    }
+
+    console.log(`Balance snapshot recorded for ${accounts.length} accounts`);
+  } catch (error) {
+    console.error('Failed to record balance snapshot:', error);
+  }
+};

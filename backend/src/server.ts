@@ -17,6 +17,7 @@ import subscriptionRoutes from './routes/subscription.routes';
 import { errorHandler } from './middleware/errorHandler';
 import { processPendingAllocations } from './services/autoAllocation.service';
 import stackCompletionService from './services/stackCompletion.service';
+import { recordBalanceSnapshot } from './controllers/account.controller';
 
 dotenv.config();
 
@@ -93,6 +94,16 @@ cron.schedule('0 3 * * *', async () => {
   }
 });
 
+// Schedule daily balance snapshot at midnight
+cron.schedule('0 0 * * *', async () => {
+  console.log('Running scheduled balance snapshot...');
+  try {
+    await recordBalanceSnapshot();
+  } catch (error) {
+    console.error('Error in scheduled balance snapshot:', error);
+  }
+});
+
 // Also run once at startup to process any missed allocations
 processPendingAllocations()
   .then((result) => {
@@ -111,11 +122,21 @@ stackCompletionService.processCompletedStacks()
     console.error('Error in initial stack completion processing:', error);
   });
 
+// Record balance snapshot at startup
+recordBalanceSnapshot()
+  .then(() => {
+    console.log('Initial balance snapshot recorded');
+  })
+  .catch((error) => {
+    console.error('Error recording initial balance snapshot:', error);
+  });
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Auto-allocation cron job scheduled (runs every hour)');
   console.log('Stack completion cron job scheduled (runs every hour)');
   console.log('Bank sync cron job scheduled (runs daily at 3 AM)');
+  console.log('Balance snapshot cron job scheduled (runs daily at midnight)');
 });
 
 export default app;

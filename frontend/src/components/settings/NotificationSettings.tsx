@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Save, AlertCircle, CheckCircle2, DollarSign, Target, TrendingUp, Calendar, Mail, Smartphone } from 'lucide-react';
+import { Bell, Save, AlertCircle, CheckCircle2, DollarSign, Target, TrendingUp, Mail, Smartphone } from 'lucide-react';
 import axios from '../../services/api';
 
 interface NotificationPreferences {
@@ -19,11 +19,6 @@ interface NotificationPreferences {
   autoAllocationReminder: boolean;
   autoAllocationComplete: boolean;
 
-  // Summary notifications
-  weeklySummary: boolean;
-  weeklySummaryDay: 'monday' | 'friday' | 'sunday';
-  monthlySummary: boolean;
-
   // Channels
   pushNotifications: boolean;
   emailNotifications: boolean;
@@ -38,9 +33,6 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
   goalMilestones: true,
   autoAllocationReminder: true,
   autoAllocationComplete: true,
-  weeklySummary: true,
-  weeklySummaryDay: 'monday',
-  monthlySummary: true,
   pushNotifications: true,
   emailNotifications: true,
 };
@@ -326,46 +318,6 @@ export default function NotificationSettings() {
               onChange={(value) => setPreferences({ ...preferences, autoAllocationComplete: value })}
               label="Allocation Completed"
               description="Confirmation when an auto-allocation is processed"
-            />
-          </div>
-        </div>
-
-        {/* Summary Reports */}
-        <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className="w-4 h-4 text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Summary Reports
-            </h3>
-          </div>
-          <div className="space-y-2">
-            <ToggleSwitch
-              enabled={preferences.weeklySummary}
-              onChange={(value) => setPreferences({ ...preferences, weeklySummary: value })}
-              label="Weekly Summary"
-              description="Get a weekly overview of your finances"
-            />
-            {preferences.weeklySummary && (
-              <div className="ml-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Send weekly summary on
-                </label>
-                <select
-                  value={preferences.weeklySummaryDay}
-                  onChange={(e) => setPreferences({ ...preferences, weeklySummaryDay: e.target.value as any })}
-                  className="input w-40"
-                >
-                  <option value="monday">Monday</option>
-                  <option value="friday">Friday</option>
-                  <option value="sunday">Sunday</option>
-                </select>
-              </div>
-            )}
-            <ToggleSwitch
-              enabled={preferences.monthlySummary}
-              onChange={(value) => setPreferences({ ...preferences, monthlySummary: value })}
-              label="Monthly Summary"
-              description="Get a monthly financial report"
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Sliders, Shield, Settings as SettingsIcon, Crown, Bell, Palette, Database } from 'lucide-react';
+import { ArrowLeft, User, Sliders, Shield, Settings as SettingsIcon, Crown, Bell, Palette, Database, TrendingUp } from 'lucide-react';
 import ProfileSettings from '../components/settings/ProfileSettings';
 import PreferencesSettings from '../components/settings/PreferencesSettings';
 import SecuritySettings from '../components/settings/SecuritySettings';
@@ -8,8 +8,9 @@ import SubscriptionSettings from '../components/settings/SubscriptionSettings';
 import NotificationSettings from '../components/settings/NotificationSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import DataPrivacySettings from '../components/settings/DataPrivacySettings';
+import BalanceHistoryChart from '../components/settings/BalanceHistoryChart';
 
-type Tab = 'profile' | 'subscription' | 'appearance' | 'notifications' | 'preferences' | 'security' | 'data';
+type Tab = 'profile' | 'subscription' | 'appearance' | 'notifications' | 'preferences' | 'security' | 'data' | 'insights';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function SettingsPage() {
     { id: 'preferences' as Tab, label: 'Preferences', icon: Sliders, description: 'App behavior' },
     { id: 'security' as Tab, label: 'Security', icon: Shield, description: 'Password and sessions' },
     { id: 'data' as Tab, label: 'Data & Privacy', icon: Database, description: 'Export and manage data' },
+    { id: 'insights' as Tab, label: 'Insights', icon: TrendingUp, description: 'Balance history' },
   ];
 
   return (
@@ -122,6 +124,7 @@ export default function SettingsPage() {
             {activeTab === 'preferences' && <PreferencesSettings />}
             {activeTab === 'security' && <SecuritySettings />}
             {activeTab === 'data' && <DataPrivacySettings />}
+            {activeTab === 'insights' && <BalanceHistoryChart />}
           </div>
         </div>
       </div>

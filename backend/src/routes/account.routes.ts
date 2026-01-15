@@ -7,6 +7,7 @@ import {
   deleteAccount,
   getAccountTransactions,
   importCSVTransactions,
+  getBalanceHistory,
 } from '../controllers/account.controller';
 import {
   getStacksByAccount,
@@ -91,6 +92,7 @@ router.use(authenticate);
 router.use(checkSubscriptionTier);
 
 router.get('/', getAccounts);
+router.get('/balance-history', getBalanceHistory);
 router.post('/', validate(createAccountSchema), createAccount);
 
 // More specific routes first (to avoid :id matching)
