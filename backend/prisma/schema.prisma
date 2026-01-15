@@ -30,14 +30,44 @@ model User {
 model UserPreferences {
   id                          String   @id @default(uuid())
   userId                      String   @unique
+
+  // General preferences
   currencyCode                String   @default("USD")  // USD, EUR, GBP, etc.
   currencySymbol              String   @default("$")
   dateFormat                  String   @default("MM/DD/YYYY")  // MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD
   timeFormat                  String   @default("12h")  // 12h, 24h
   itemsPerPage                Int      @default(10)
   defaultAccountId            String?
-  emailNotifications          Boolean  @default(true)
   negativeBalanceBehavior     String   @default("auto_deallocate")  // auto_deallocate, allow_negative, notify_only
+
+  // Notification preferences
+  transactionAlerts           String   @default("all")  // all, large_only, none
+  largeTransactionThreshold   Int      @default(100)
+  lowBalanceAlert             Boolean  @default(true)
+  lowBalanceThreshold         Int      @default(50)
+  goalProgress                Boolean  @default(true)
+  goalMilestones              Boolean  @default(true)
+  autoAllocationReminder      Boolean  @default(true)
+  autoAllocationComplete      Boolean  @default(true)
+  weeklySummary               Boolean  @default(true)
+  weeklySummaryDay            String   @default("monday")  // monday, friday, sunday
+  monthlySummary              Boolean  @default(true)
+  pushNotifications           Boolean  @default(true)
+  emailNotifications          Boolean  @default(true)
+
+  // Appearance preferences
+  theme                       String   @default("system")  // light, dark, system
+  hideBalances                Boolean  @default(false)
+  compactMode                 Boolean  @default(false)
+  reducedMotion               Boolean  @default(false)
+  accentColor                 String   @default("indigo")
+
+  // Security preferences
+  autoLockEnabled             Boolean  @default(false)
+  autoLockTimeout             Int      @default(15)  // minutes
+  loginAlerts                 Boolean  @default(true)
+  newDeviceAlerts             Boolean  @default(true)
+
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 
