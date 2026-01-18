@@ -1,7 +1,7 @@
 import { useState, FormEvent, useMemo, useRef, useEffect } from 'react';
 import { useAccountStore } from '../store/accountStore';
 import { useAuthStore } from '../store/authStore';
-import { X, Edit3, Calendar, Repeat, Palette } from 'lucide-react';
+import { X, Edit3, Calendar, Repeat, Palette, Clock } from 'lucide-react';
 import { Stack, TIER_LIMITS } from '../types';
 import { calculatePaymentAmount, getFrequencyLabel, formatDaysUntilDue } from '../utils/paymentCalculator';
 import UpgradePrompt from './UpgradePrompt';
@@ -29,11 +29,9 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
   const [targetDueDate, setTargetDueDate] = useState(stack.targetDueDate ? new Date(stack.targetDueDate).toISOString().split('T')[0] : '');
   const [recurringPeriod, setRecurringPeriod] = useState<'none' | 'weekly' | 'bi_weekly' | 'bi_monthly' | 'monthly' | 'quarterly' | 'semi_annually' | 'annually'>(stack.recurringPeriod || 'none');
   const [paymentFrequency, setPaymentFrequency] = useState<'daily' | 'every_other_day' | 'weekly' | 'bi_weekly' | 'bi_monthly' | 'monthly' | 'semi_annually' | 'annually'>(stack.autoAllocateFrequency || 'bi_weekly');
-  const [firstPaymentDate, setFirstPaymentDate] = useState(stack.autoAllocateStartDate ? new Date(stack.autoAllocateStartDate).toISOString().split('T')[0] : '');
   const [autoAllocate, setAutoAllocate] = useState(stack.autoAllocate);
   const [autoAllocateAmount, setAutoAllocateAmount] = useState(stack.autoAllocateAmount?.toString() || '');
   const [autoAllocateFrequency, setAutoAllocateFrequency] = useState<'daily' | 'every_other_day' | 'weekly' | 'bi_weekly' | 'bi_monthly' | 'monthly' | 'semi_annually' | 'annually'>(stack.autoAllocateFrequency || 'bi_weekly');
-  const [autoAllocateStartDate, setAutoAllocateStartDate] = useState(stack.autoAllocateStartDate ? new Date(stack.autoAllocateStartDate).toISOString().split('T')[0] : '');
   const [resetBehavior, setResetBehavior] = useState<'none' | 'auto_reset' | 'ask_reset' | 'delete'>(stack.resetBehavior);
   const [overflowBehavior, setOverflowBehavior] = useState<'next_priority' | 'available_balance' | 'keep_in_stack'>(stack.overflowBehavior);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,6 +53,19 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
     nameInputRef.current?.focus();
   }, []);
 
+  // Format the next payment date for display
+  const nextPaymentDateFormatted = useMemo(() => {
+    if (stack.autoAllocateNextDate) {
+      return new Date(stack.autoAllocateNextDate).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+    return null;
+  }, [stack.autoAllocateNextDate]);
+
   // Calculate payment amounts when target amount and due date are set
   const paymentCalculation = useMemo(() => {
     if (!targetAmount || !targetDueDate) return null;
@@ -62,14 +73,19 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
     const target = parseFloat(targetAmount);
     if (isNaN(target) || target <= 0) return null;
 
+    // Use the next payment date if available, otherwise calculate from today
+    const startDate = stack.autoAllocateNextDate
+      ? new Date(stack.autoAllocateNextDate)
+      : new Date();
+
     return calculatePaymentAmount(
       target,
       stack.currentAmount,
       new Date(targetDueDate),
       paymentFrequency,
-      firstPaymentDate ? new Date(firstPaymentDate) : undefined
+      startDate
     );
-  }, [targetAmount, targetDueDate, paymentFrequency, firstPaymentDate, stack.currentAmount]);
+  }, [targetAmount, targetDueDate, paymentFrequency, stack.currentAmount, stack.autoAllocateNextDate]);
 
   // Update auto-allocate amount when payment calculation changes if it's below the new minimum
   useEffect(() => {
@@ -105,7 +121,7 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
         autoAllocate: finalAutoAllocate,
         autoAllocateAmount: finalAutoAllocate && autoAllocateAmount ? parseFloat(autoAllocateAmount) : undefined,
         autoAllocateFrequency: finalAutoAllocate ? autoAllocateFrequency : undefined,
-        autoAllocateStartDate: finalAutoAllocate && autoAllocateStartDate ? autoAllocateStartDate : undefined,
+        // Don't send autoAllocateStartDate - keep the existing schedule
         resetBehavior: finalResetBehavior,
         recurringPeriod: recurringPeriod !== 'none' ? recurringPeriod : undefined,
         overflowBehavior,
@@ -276,50 +292,55 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
             )}
           </div>
 
-          {/* Payment Calculator Section */}
+          {/* Auto-Allocation Section */}
           {targetAmount && parseFloat(targetAmount) > 0 && targetDueDate && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-4">
               <div className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
                 <Calendar className="w-4 h-4" />
-                <h3 className="font-medium text-sm">Payment Calculator</h3>
+                <h3 className="font-medium text-sm">Auto-Allocation Settings</h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="paymentFrequency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    How often would you like to contribute?
-                  </label>
-                  <select
-                    id="paymentFrequency"
-                    value={paymentFrequency}
-                    onChange={(e) => setPaymentFrequency(e.target.value as any)}
-                    className="input"
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="every_other_day">Every Other Day</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bi_weekly">Bi-Weekly (Every 2 weeks)</option>
-                    <option value="bi_monthly">Bi-Monthly (Twice a month)</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="semi_annually">Semi-Annually (Every 6 months)</option>
-                    <option value="annually">Annually</option>
-                  </select>
+              {/* Show current next payment date if auto-allocation is active */}
+              {stack.autoAllocate && nextPaymentDateFormatted && (
+                <div className="bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-xs font-medium uppercase tracking-wide">Next Allocation</span>
+                  </div>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {nextPaymentDateFormatted}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    ${stack.autoAllocateAmount?.toFixed(2)} will be allocated {getFrequencyLabel(stack.autoAllocateFrequency || 'bi_weekly').toLowerCase()}
+                  </p>
                 </div>
+              )}
 
-                <div>
-                  <label htmlFor="firstPaymentDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    First Payment Date
-                  </label>
-                  <input
-                    id="firstPaymentDate"
-                    type="date"
-                    value={firstPaymentDate}
-                    onChange={(e) => setFirstPaymentDate(e.target.value)}
-                    className="input"
-                    min={new Date().toISOString().split('T')[0]}
-                    max={targetDueDate || undefined}
-                  />
-                </div>
+              <div>
+                <label htmlFor="paymentFrequency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  How often would you like to contribute?
+                </label>
+                <select
+                  id="paymentFrequency"
+                  value={paymentFrequency}
+                  onChange={(e) => {
+                    const newFreq = e.target.value as any;
+                    setPaymentFrequency(newFreq);
+                    if (autoAllocate) {
+                      setAutoAllocateFrequency(newFreq);
+                    }
+                  }}
+                  className="input"
+                >
+                  <option value="daily">Daily</option>
+                  <option value="every_other_day">Every Other Day</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="bi_weekly">Bi-Weekly (Every 2 weeks)</option>
+                  <option value="bi_monthly">Bi-Monthly (Twice a month)</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="semi_annually">Semi-Annually (Every 6 months)</option>
+                  <option value="annually">Annually</option>
+                </select>
               </div>
 
               {paymentCalculation && !paymentCalculation.isOverdue && (
@@ -351,8 +372,6 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
                           setAutoAllocate(checked);
                           if (checked) {
                             setAutoAllocateFrequency(paymentFrequency);
-                            // Use first payment date if set, otherwise use today
-                            setAutoAllocateStartDate(firstPaymentDate || new Date().toISOString().split('T')[0]);
                             if (!autoAllocateAmount) {
                               setAutoAllocateAmount(paymentCalculation.amountPerPayment.toFixed(2));
                             }
@@ -363,7 +382,7 @@ export default function EditStackModal({ stack, onClose }: EditStackModalProps) 
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <label htmlFor="useCalculatedPayments" className={`text-sm font-medium ${canUseAutoAllocation ? 'text-gray-900 dark:text-white cursor-pointer' : 'text-gray-500 dark:text-gray-400'}`}>
-                            Automate these payments
+                            {stack.autoAllocate ? 'Keep automatic payments' : 'Automate these payments'}
                           </label>
                           {!canUseAutoAllocation && <UpgradePrompt feature="Auto-allocation" inline />}
                         </div>
