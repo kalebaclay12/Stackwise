@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 import { processPendingAllocations } from '../services/autoAllocation.service';
 import { calculateNextAllocationDate, AllocationFrequency } from '../utils/dateCalculator';
 import stackCompletionService from '../services/stackCompletion.service';
+import { processUnmatchedTransactions } from '../services/transactionMatcher.service';
 
 export const getStacksByAccount = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -105,6 +106,12 @@ export const createStack = async (req: AuthRequest, res: Response, next: NextFun
         recurringPeriod: recurringPeriod || null,
         overflowBehavior: overflowBehavior || 'next_priority',
       },
+    });
+
+    // Automatically scan for transaction matches when a new stack is created
+    // This runs in the background and doesn't block the response
+    processUnmatchedTransactions(accountId).catch((err) => {
+      console.error('Error scanning for transaction matches after stack creation:', err);
     });
 
     res.status(201).json(stack);
@@ -231,6 +238,14 @@ export const updateStack = async (req: AuthRequest, res: Response, next: NextFun
       where: { id },
       data: updateData,
     });
+
+    // If the name or description changed, re-scan for transaction matches
+    // This allows existing unmatched transactions to be matched to renamed stacks
+    if (otherFields.name !== undefined || otherFields.description !== undefined) {
+      processUnmatchedTransactions(stack.accountId).catch((err) => {
+        console.error('Error scanning for transaction matches after stack update:', err);
+      });
+    }
 
     res.json(updatedStack);
   } catch (error) {
