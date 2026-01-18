@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import stackCompletionService from './stackCompletion.service';
 
 interface MatchResult {
   stackId: string;
@@ -174,13 +175,15 @@ export async function findStackMatch(
 
 /**
  * Process unmatched transactions and auto-match or suggest stack matches
+ * When a transaction matches a stack, it means the bill/expense was paid
+ * The stack is marked as complete and triggers the reset flow
  * Auto-confirms high-confidence matches (>= 0.95)
  * Returns stats about matches processed
  */
 export async function processUnmatchedTransactions(
   accountId: string,
   autoConfirmThreshold: number = 0.95
-): Promise<{ autoConfirmed: number; suggested: number }> {
+): Promise<{ autoConfirmed: number; suggested: number; completed: number }> {
   // Find all real (non-virtual) transactions without a stack assignment
   // and without existing suggestions
   const unmatchedTransactions = await prisma.transaction.findMany({
@@ -200,34 +203,32 @@ export async function processUnmatchedTransactions(
 
   let autoConfirmed = 0;
   let suggested = 0;
+  let completed = 0;
 
   const account = await prisma.account.findUnique({
     where: { id: accountId },
   });
 
   if (!account) {
-    return { autoConfirmed: 0, suggested: 0 };
+    return { autoConfirmed: 0, suggested: 0, completed: 0 };
   }
 
   for (const transaction of unmatchedTransactions) {
     const match = await findStackMatch(transaction.description, accountId, 0.6);
 
     if (match) {
+      // Get the stack to check its current state
+      const stack = await prisma.stack.findUnique({
+        where: { id: match.stackId },
+      });
+
+      if (!stack) continue;
+
       // High confidence - auto-confirm the match
       if (match.confidence >= autoConfirmThreshold) {
-        const amountToDeduct = Math.abs(transaction.amount);
+        const transactionAmount = Math.abs(transaction.amount);
 
         await prisma.$transaction(async (tx) => {
-          // Update stack balance
-          await tx.stack.update({
-            where: { id: match.stackId },
-            data: {
-              currentAmount: {
-                decrement: amountToDeduct,
-              },
-            },
-          });
-
           // Mark transaction as auto-matched
           await tx.transaction.update({
             where: { id: transaction.id },
@@ -239,24 +240,66 @@ export async function processUnmatchedTransactions(
             },
           });
 
-          // Create a virtual transaction for the stack deduction
+          // Create a virtual transaction to record the match
           await tx.transaction.create({
             data: {
               accountId: transaction.accountId,
               stackId: match.stackId,
               type: 'deduction',
-              amount: -amountToDeduct,
-              description: `Auto-matched: ${transaction.description}`,
+              amount: -transactionAmount,
+              description: `Bill paid: ${transaction.description}`,
               balance: account.balance,
               isVirtual: true,
             },
           });
+
+          // Mark the stack as completed - the bill was paid!
+          // The stack's currentAmount represents money saved FOR the bill,
+          // which is now used to pay it
+          const shouldAskReset = stack.resetBehavior === 'ask_reset';
+
+          await tx.stack.update({
+            where: { id: match.stackId },
+            data: {
+              isCompleted: true,
+              completedAt: new Date(),
+              pendingReset: shouldAskReset,
+              // Keep currentAmount as-is - it shows how much was saved
+              // Any excess/shortfall can be handled in the reset flow
+            },
+          });
+
+          // Create notification if user needs to decide on reset
+          if (shouldAskReset) {
+            await tx.notification.create({
+              data: {
+                userId: account.userId,
+                type: 'stack_completed_by_payment',
+                title: `${stack.name} - Bill Paid!`,
+                message: `Your "${stack.name}" bill of $${transactionAmount.toFixed(2)} was paid. You had $${stack.currentAmount.toFixed(2)} saved. Would you like to reset the stack for the next cycle?`,
+                data: JSON.stringify({
+                  stackId: stack.id,
+                  stackName: stack.name,
+                  transactionAmount,
+                  savedAmount: stack.currentAmount,
+                }),
+                read: false,
+              },
+            });
+          }
         });
 
         autoConfirmed++;
+        completed++;
         console.log(
-          `Auto-confirmed match: "${transaction.description}" → "${match.stackName}" (${(match.confidence * 100).toFixed(0)}% confidence)`
+          `Auto-confirmed match & completed: "${transaction.description}" → "${match.stackName}" (${(match.confidence * 100).toFixed(0)}% confidence)`
         );
+
+        // Handle auto-reset if configured
+        if (stack.resetBehavior === 'auto_reset') {
+          await stackCompletionService.autoResetStack(match.stackId);
+          console.log(`Auto-reset triggered for stack "${match.stackName}"`);
+        }
       } else {
         // Lower confidence - suggest for user review
         await prisma.transaction.update({
@@ -274,12 +317,13 @@ export async function processUnmatchedTransactions(
     }
   }
 
-  return { autoConfirmed, suggested };
+  return { autoConfirmed, suggested, completed };
 }
 
 /**
  * Confirm a transaction-stack match
- * This will reduce the available balance and increase the stack balance
+ * When user confirms a match, the stack is marked as completed (bill paid)
+ * and triggers the reset flow based on stack settings
  */
 export async function confirmTransactionMatch(
   transactionId: string,
@@ -315,21 +359,10 @@ export async function confirmTransactionMatch(
     throw new Error('Suggested stack not found');
   }
 
-  // The transaction amount is negative for expenses
-  // We want to deduct from the stack
-  const amountToDeduct = Math.abs(transaction.amount);
+  const transactionAmount = Math.abs(transaction.amount);
+  const shouldAskReset = stack.resetBehavior === 'ask_reset';
 
   await prisma.$transaction(async (tx) => {
-    // Update stack balance
-    await tx.stack.update({
-      where: { id: stack.id },
-      data: {
-        currentAmount: {
-          decrement: amountToDeduct,
-        },
-      },
-    });
-
     // Mark transaction as confirmed
     await tx.transaction.update({
       where: { id: transactionId },
@@ -339,19 +372,53 @@ export async function confirmTransactionMatch(
       },
     });
 
-    // Create a virtual transaction for the stack
+    // Create a virtual transaction to record the bill payment
     await tx.transaction.create({
       data: {
         accountId: transaction.accountId,
         stackId: stack.id,
-        type: 'allocation',
-        amount: -amountToDeduct,
-        description: `Matched: ${transaction.description}`,
+        type: 'deduction',
+        amount: -transactionAmount,
+        description: `Bill paid: ${transaction.description}`,
         balance: transaction.account.balance,
         isVirtual: true,
       },
     });
+
+    // Mark the stack as completed - the bill was paid!
+    await tx.stack.update({
+      where: { id: stack.id },
+      data: {
+        isCompleted: true,
+        completedAt: new Date(),
+        pendingReset: shouldAskReset,
+      },
+    });
+
+    // Create notification if user needs to decide on reset
+    if (shouldAskReset) {
+      await tx.notification.create({
+        data: {
+          userId: transaction.account.userId,
+          type: 'stack_completed_by_payment',
+          title: `${stack.name} - Bill Paid!`,
+          message: `Your "${stack.name}" bill of $${transactionAmount.toFixed(2)} was paid. You had $${stack.currentAmount.toFixed(2)} saved. Would you like to reset the stack for the next cycle?`,
+          data: JSON.stringify({
+            stackId: stack.id,
+            stackName: stack.name,
+            transactionAmount,
+            savedAmount: stack.currentAmount,
+          }),
+          read: false,
+        },
+      });
+    }
   });
+
+  // Handle auto-reset if configured (outside transaction to avoid deadlock)
+  if (stack.resetBehavior === 'auto_reset') {
+    await stackCompletionService.autoResetStack(stack.id);
+  }
 }
 
 /**
