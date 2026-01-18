@@ -253,7 +253,7 @@ export default function StackDetailModal({ stack, onClose }: StackDetailModalPro
                             {formatDaysUntilDue(paymentCalculation.daysUntilDue)}
                           </p>
                           <p className="text-base md:text-lg font-bold text-purple-700 dark:text-purple-300 mt-1">
-                            {formatCurrency(paymentCalculation.amountPerPayment)} per {getFrequencyLabel(stack.autoAllocate && stack.autoAllocateFrequency ? stack.autoAllocateFrequency : 'bi_weekly').toLowerCase()} payment
+                            {formatCurrency(paymentCalculation.amountPerPayment)} minimum per {getFrequencyLabel(stack.autoAllocate && stack.autoAllocateFrequency ? stack.autoAllocateFrequency : 'bi_weekly').toLowerCase()} payment
                           </p>
                           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                             {paymentCalculation.paymentsRemaining} payment{paymentCalculation.paymentsRemaining !== 1 ? 's' : ''} remaining
