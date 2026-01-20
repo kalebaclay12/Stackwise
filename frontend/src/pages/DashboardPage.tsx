@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [showImportCSV, setShowImportCSV] = useState(false);
   const [showCreateTransaction, setShowCreateTransaction] = useState(false);
   const [showRemoveLinkedBank, setShowRemoveLinkedBank] = useState(false);
+  const [transactionRefreshTrigger, setTransactionRefreshTrigger] = useState(0);
 
   useEffect(() => {
     fetchAccounts();
@@ -389,6 +390,7 @@ export default function DashboardPage() {
               <TransactionHistory
                 accountId={selectedAccount.id}
                 title=""
+                refreshTrigger={transactionRefreshTrigger}
               />
             </div>
 
@@ -466,6 +468,10 @@ export default function DashboardPage() {
           onClose={() => {
             setShowImportCSV(false);
             refreshCurrentAccount();
+            // Trigger transaction list refresh after CSV import
+            setTimeout(() => {
+              setTransactionRefreshTrigger(prev => prev + 1);
+            }, 0);
           }}
         />
       )}
@@ -475,6 +481,12 @@ export default function DashboardPage() {
           accountId={selectedAccount.id}
           onClose={() => {
             setShowCreateTransaction(false);
+          }}
+          onTransactionCreated={() => {
+            // Use setTimeout to ensure state update happens after React's batching
+            setTimeout(() => {
+              setTransactionRefreshTrigger(prev => prev + 1);
+            }, 0);
           }}
           onSuccess={() => {
             refreshCurrentAccount();
