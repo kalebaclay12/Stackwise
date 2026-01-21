@@ -483,10 +483,7 @@ export default function DashboardPage() {
             setShowCreateTransaction(false);
           }}
           onTransactionCreated={() => {
-            // Use setTimeout to ensure state update happens after React's batching
-            setTimeout(() => {
-              setTransactionRefreshTrigger(prev => prev + 1);
-            }, 0);
+            setTransactionRefreshTrigger(prev => prev + 1);
           }}
           onSuccess={() => {
             refreshCurrentAccount();

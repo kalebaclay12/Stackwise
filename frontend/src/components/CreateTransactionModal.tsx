@@ -8,9 +8,10 @@ interface CreateTransactionModalProps {
   accountId: string;
   onClose: () => void;
   onSuccess?: () => void;
+  onTransactionCreated?: () => void;
 }
 
-export default function CreateTransactionModal({ accountId, onClose, onSuccess }: CreateTransactionModalProps) {
+export default function CreateTransactionModal({ accountId, onClose, onSuccess, onTransactionCreated }: CreateTransactionModalProps) {
   const [type, setType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -50,7 +51,15 @@ export default function CreateTransactionModal({ accountId, onClose, onSuccess }
       if (onSuccess) {
         await onSuccess();
       }
+      // Close modal first, then trigger refresh after a brief delay
+      // This ensures the parent component processes the close before the refresh
       onClose();
+      // Trigger transaction list refresh after modal closes
+      if (onTransactionCreated) {
+        setTimeout(() => {
+          onTransactionCreated();
+        }, 50);
+      }
     } catch (error) {
       console.error('Create transaction error:', error);
       alert('Failed to create transaction');
