@@ -15,10 +15,12 @@ interface AccountState {
   selectedAccount: Account | null;
   isLoading: boolean;
   error: string | null;
+  transactionRefreshCounter: number;
   fetchAccounts: () => Promise<void>;
   fetchStacks: (accountId: string) => Promise<void>;
   selectAccount: (account: Account | null) => void;
   refreshCurrentAccount: () => Promise<void>;
+  triggerTransactionRefresh: () => void;
   createAccount: (data: { type: 'checking' | 'savings'; name: string; color?: string }) => Promise<void>;
   createStack: (accountId: string, data: Partial<Stack>) => Promise<void>;
   updateStack: (stackId: string, data: Partial<Stack>) => Promise<void>;
@@ -35,6 +37,11 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   selectedAccount: null,
   isLoading: false,
   error: null,
+  transactionRefreshCounter: 0,
+
+  triggerTransactionRefresh: () => {
+    set((state) => ({ transactionRefreshCounter: state.transactionRefreshCounter + 1 }));
+  },
 
   fetchAccounts: async () => {
     set({ isLoading: true, error: null });
@@ -223,6 +230,8 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         set({ selectedAccount: updatedAccount });
       }
       await get().fetchStacks(accountId);
+      // Trigger transaction list refresh
+      get().triggerTransactionRefresh();
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Failed to import CSV transactions' });
       throw error;

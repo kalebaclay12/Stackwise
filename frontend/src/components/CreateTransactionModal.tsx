@@ -18,7 +18,7 @@ export default function CreateTransactionModal({ accountId, onClose, onSuccess, 
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isLoading, setIsLoading] = useState(false);
-  const { refreshCurrentAccount } = useAccountStore();
+  const { refreshCurrentAccount, triggerTransactionRefresh } = useAccountStore();
   const descriptionInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -49,17 +49,15 @@ export default function CreateTransactionModal({ accountId, onClose, onSuccess, 
 
       await refreshCurrentAccount();
       if (onSuccess) {
-        await onSuccess();
+        onSuccess();
       }
-      // Close modal first, then trigger refresh after a brief delay
-      // This ensures the parent component processes the close before the refresh
-      onClose();
-      // Trigger transaction list refresh after modal closes
+      // Trigger transaction list refresh via store (this updates all TransactionHistory components)
+      triggerTransactionRefresh();
+      // Also call the callback if provided for backwards compatibility
       if (onTransactionCreated) {
-        setTimeout(() => {
-          onTransactionCreated();
-        }, 50);
+        onTransactionCreated();
       }
+      onClose();
     } catch (error) {
       console.error('Create transaction error:', error);
       alert('Failed to create transaction');

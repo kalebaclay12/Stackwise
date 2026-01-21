@@ -12,15 +12,16 @@ interface TransactionHistoryProps {
   stackId?: string;
   title?: string;
   isMobileModal?: boolean; // New prop for mobile-optimized display
+  refreshTrigger?: number; // Optional prop to trigger refresh (deprecated, use store)
 }
 
-export default function TransactionHistory({ accountId, stackId, title, isMobileModal = false }: TransactionHistoryProps) {
+export default function TransactionHistory({ accountId, stackId, title, isMobileModal = false, refreshTrigger }: TransactionHistoryProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const { refreshCurrentAccount } = useAccountStore();
+  const { refreshCurrentAccount, transactionRefreshCounter } = useAccountStore();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 10;
 
@@ -48,7 +49,7 @@ export default function TransactionHistory({ accountId, stackId, title, isMobile
     };
 
     fetchTransactions();
-  }, [accountId, stackId]);
+  }, [accountId, stackId, refreshTrigger, transactionRefreshCounter]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
